@@ -1,3 +1,4 @@
+const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
 const Constants = require('./Constants')
@@ -55,16 +56,16 @@ module.exports = class Character {
 
   setAnimation (animationId) {
     switch (animationId) {
-      case AnimationIdentifiers.MoveDown:
+      case Constants.AnimationIdentifiers.MoveDown:
         this.actualAnimation = this.animations.goDown
         break
-      case AnimationIdentifiers.MoveRight:
+      case Constants.AnimationIdentifiers.MoveRight:
         this.actualAnimation = this.animations.goRight
         break
-      case AnimationIdentifiers.MoveUp:
+      case Constants.AnimationIdentifiers.MoveUp:
         this.actualAnimation = this.animations.goUp
         break
-      case AnimationIdentifiers.MoveLeft:
+      case Constants.AnimationIdentifiers.MoveLeft:
         this.actualAnimation = this.animations.goLeft
         break
     }

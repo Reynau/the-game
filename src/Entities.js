@@ -1,3 +1,4 @@
+const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
 class Heart {
@@ -62,5 +63,5 @@ function generateTextureFromTileMap (tileMap, rectangle) {
 
 module.exports = {
   Heart,
-  Coin,
+  Coin
 }

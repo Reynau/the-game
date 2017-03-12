@@ -37993,7 +37993,183 @@ module.exports = {
 };
 
 },{}],185:[function(require,module,exports){
+const Rectangle = PIXI.Rectangle
+
+const Constants = require('./Constants')
+
+module.exports = class Character {
+  constructor (texture, x, y) {
+    this.animationTextures = {}
+    this.animationTextures.goDown = []
+    this.animationTextures.goDown.push(generateTextureFromTileMap(texture, new Rectangle(0, 0, 16, 32)))
+    this.animationTextures.goDown.push(generateTextureFromTileMap(texture, new Rectangle(16, 0, 16, 32)))
+    this.animationTextures.goDown.push(generateTextureFromTileMap(texture, new Rectangle(32, 0, 16, 32)))
+    this.animationTextures.goDown.push(generateTextureFromTileMap(texture, new Rectangle(48, 0, 16, 32)))
+
+    this.animationTextures.goRight = []
+    this.animationTextures.goRight.push(generateTextureFromTileMap(texture, new Rectangle(0, 32, 16, 32)))
+    this.animationTextures.goRight.push(generateTextureFromTileMap(texture, new Rectangle(16, 32, 16, 32)))
+    this.animationTextures.goRight.push(generateTextureFromTileMap(texture, new Rectangle(32, 32, 16, 32)))
+    this.animationTextures.goRight.push(generateTextureFromTileMap(texture, new Rectangle(48, 32, 16, 32)))
+
+    this.animationTextures.goUp = []
+    this.animationTextures.goUp.push(generateTextureFromTileMap(texture, new Rectangle(0, 64, 16, 32)))
+    this.animationTextures.goUp.push(generateTextureFromTileMap(texture, new Rectangle(16, 64, 16, 32)))
+    this.animationTextures.goUp.push(generateTextureFromTileMap(texture, new Rectangle(32, 64, 16, 32)))
+    this.animationTextures.goUp.push(generateTextureFromTileMap(texture, new Rectangle(48, 64, 16, 32)))
+
+    this.animationTextures.goLeft = []
+    this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(0, 96, 16, 32)))
+    this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(16, 96, 16, 32)))
+    this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(32, 96, 16, 32)))
+    this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(48, 96, 16, 32)))
+
+    this.animations = {}
+    this.animations.goDown = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
+    this.animations.goRight = new PIXI.extras.AnimatedSprite(this.animationTextures.goRight)
+    this.animations.goUp = new PIXI.extras.AnimatedSprite(this.animationTextures.goUp)
+    this.animations.goLeft = new PIXI.extras.AnimatedSprite(this.animationTextures.goLeft)
+
+    this.actualAnimation = this.animations.goDown
+    this.actualAnimation.anchor.set(0.5)
+    this.actualAnimation.position.set(x, y)
+    this.actualAnimation.animationSpeed = 0.05
+  }
+
+  getActualDirection () {
+    return this.direction
+  }
+
+  setActualDirection (direction) {
+    this.direction = direction
+  }
+
+  getAnimation () {
+    return this.actualAnimation
+  }
+
+  setAnimation (animationId) {
+    switch (animationId) {
+      case AnimationIdentifiers.MoveDown:
+        this.actualAnimation = this.animations.goDown
+        break
+      case AnimationIdentifiers.MoveRight:
+        this.actualAnimation = this.animations.goRight
+        break
+      case AnimationIdentifiers.MoveUp:
+        this.actualAnimation = this.animations.goUp
+        break
+      case AnimationIdentifiers.MoveLeft:
+        this.actualAnimation = this.animations.goLeft
+        break
+    }
+  }
+
+  playAnimation () {
+    this.actualAnimation.play()
+  }
+
+  stopAnimation () {
+    this.actualAnimation.stop()
+  }
+}
+
+function generateTextureFromTileMap (tileMap, rectangle) {
+  let tempTexture = tileMap.clone()
+  tempTexture.frame = rectangle
+  return tempTexture
+}
+},{"./Constants":186}],186:[function(require,module,exports){
+const Directions = {
+  Down: 0,
+  Right: 1,
+  Up: 2,
+  Left: 3,
+}
+
+const AnimationIdentifiers = {
+  MoveDown: 0,
+  MoveRight: 1,
+  MoveUp: 2,
+  MoveLeft: 3,
+}
+
+module.exports = {
+  Directions,
+  AnimationIdentifiers
+}
+},{}],187:[function(require,module,exports){
+const Rectangle = PIXI.Rectangle
+
+class Heart {
+  constructor (texture, x, y) {
+    this.animationTextures = []
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(0, 48, 16, 16)))
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(16, 48, 16, 16)))
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(32, 48, 16, 16)))
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(48, 48, 16, 16)))
+
+    this.animation = new PIXI.extras.AnimatedSprite(this.animationTextures)
+    this.animation.anchor.set(0.5)
+    this.animation.position.set(x, y)
+    this.animation.animationSpeed = 0.1
+  }
+
+  getAnimation () {
+    return this.animation
+  }
+
+  playAnimation () {
+    this.animation.play()
+  }
+
+  stopAnimation () {
+    this.animation.stop()
+  }
+}
+
+class Coin {
+  constructor (texture, x, y) {
+    this.animationTextures = []
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(0, 64, 16, 16)))
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(16, 64, 16, 16)))
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(32, 64, 16, 16)))
+    this.animationTextures.push(generateTextureFromTileMap(texture, new Rectangle(48, 64, 16, 16)))
+
+    this.animation = new PIXI.extras.AnimatedSprite(this.animationTextures)
+    this.animation.anchor.set(0.5)
+    this.animation.position.set(x, y)
+    this.animation.animationSpeed = 0.1
+  }
+
+  getAnimation () {
+    return this.animation
+  }
+
+  playAnimation () {
+    this.animation.play()
+  }
+
+  stopAnimation () {
+    this.animation.stop()
+  }
+}
+
+function generateTextureFromTileMap (tileMap, rectangle) {
+  let tempTexture = tileMap.clone()
+  tempTexture.frame = rectangle
+  return tempTexture
+}
+
+module.exports = {
+  Heart,
+  Coin,
+}
+},{}],188:[function(require,module,exports){
 const PIXI = require('pixi.js')
+
+const Character = require('./Character')
+const Entities = require('./Entities')
 
 // PIXI constants
 const app = new PIXI.Application()
@@ -38002,8 +38178,10 @@ const Sprite = PIXI.Sprite
 const Rectangle = PIXI.Rectangle
 
 // Game constants
-const characterTextures = []
 const sprites = {}
+
+let character = {}
+let entities = {}
 
 document.body.appendChild(app.view)
 
@@ -38011,39 +38189,20 @@ loader
   .add('character', 'assets/gfx/character.png')
   .add('objects', 'assets/gfx/objects.png')
   .load(function (loader, resources) {
-    let charText = resources.character.texture
-    let heartText = resources.objects.texture
+    character = new Character(resources.character.texture, 32, 32)
+    character.playAnimation()
 
-    characterTextures.push(generateTextureFromTileMap(charText, new Rectangle(0, 0, 16, 32)))
-    characterTextures.push(generateTextureFromTileMap(charText, new Rectangle(16, 0, 16, 32)))
-    characterTextures.push(generateTextureFromTileMap(charText, new Rectangle(32, 0, 16, 32)))
-    characterTextures.push(generateTextureFromTileMap(charText, new Rectangle(64, 0, 16, 32)))
+    entities.heart = new Entities.Heart(resources.objects.texture, 64, 64)
+    entities.heart.playAnimation()
 
-    heartText.frame = new Rectangle(5*16, 0, 16, 16)
+    entities.coin = new Entities.Coin(resources.objects.texture, 128, 128)
+    entities.coin.playAnimation()
 
-    sprites.character = new PIXI.extras.AnimatedSprite(characterTextures)
-    sprites.character.anchor.set(0.5)
-    sprites.character.position.set(32, 32)
-    sprites.character.play()
-
-    sprites.heart = new Sprite(heartText)
-    sprites.heart.anchor.set(0.5, 0.5)
-    sprites.heart.position.set(64, 64)
-    sprites.heart.animate = function () {
-      let d = new Date();
-      sprites.heart.rotation += 0.1
-      sprites.heart.scale.x = Math.sin(d.getMilliseconds() / 300)
-      sprites.heart.scale.y = Math.sin(d.getMilliseconds() / 300)
-    }
-
-    app.stage.addChild(sprites.character)
-    app.stage.addChild(sprites.heart)
-    app.ticker.add(sprites.heart.animate)
+    app.stage.addChild(character.getAnimation())
+    app.stage.addChild(entities.heart.getAnimation())
+    app.stage.addChild(entities.coin.getAnimation())
   })
 
-function generateTextureFromTileMap (tileMap, rectangle) {
-  tileMap.frame = rectangle
-  return tileMap
-}
 
-},{"pixi.js":138}]},{},[185]);
+
+},{"./Character":185,"./Entities":187,"pixi.js":138}]},{},[188]);

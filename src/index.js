@@ -6,12 +6,8 @@ const Entities = require('./Entities')
 // PIXI constants
 const app = new PIXI.Application()
 const loader = PIXI.loader
-const Sprite = PIXI.Sprite
-const Rectangle = PIXI.Rectangle
 
 // Game constants
-const sprites = {}
-
 let character = {}
 let entities = {}
 
@@ -34,5 +30,3 @@ loader
     app.stage.addChild(entities.heart.getAnimation())
     app.stage.addChild(entities.coin.getAnimation())
   })
-
-
