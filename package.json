@@ -1,0 +1,36 @@
+{
+  "name": "eat-the-chocolate",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "browserify src/index.js -o docs/bundle.js",
+    "test": "standard && jshint src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Reynau/eat-the-chocolate.git"
+  },
+  "keywords": [
+    "game",
+    "videogame",
+    "pixi"
+  ],
+  "author": "Xavier Lopez Reynau",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Reynau/eat-the-chocolate/issues"
+  },
+  "homepage": "https://github.com/Reynau/eat-the-chocolate#readme",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "pixi.js": "^4.4.1"
+  },
+  "devDependencies": {
+    "browserify": "^14.1.0",
+    "express": "^4.15.2",
+    "jshint": "^2.9.4",
+    "mocha": "^3.2.0",
+    "standard": "^9.0.1"
+  }
+}
