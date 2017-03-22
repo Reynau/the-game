@@ -38030,7 +38030,7 @@ module.exports = class Character {
     this.animation = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
     this.animation.anchor.set(0.5)
     this.animation.position.set(x, y)
-    this.animation.animationSpeed = 0.05
+    this.animation.animationSpeed = 0.1
   }
 
   getActualDirection () {
@@ -38113,7 +38113,7 @@ function generateTextureFromTileMap (tileMap, rectangle) {
     y: rectangle.y,
     width: rectangle.width,
     height: rectangle.height
-  });
+  })
 }
 
 },{"./Constants":186,"pixi.js":138}],186:[function(require,module,exports){
@@ -38220,11 +38220,30 @@ module.exports = {
 }
 
 },{"pixi.js":138}],188:[function(require,module,exports){
+
+module.exports = class Game {
+  constructor (character, entities) {
+    this.character = character
+    this.entities = entities
+
+    // Temporal lines
+    this.character.playAnimation()
+    this.entities.hearts.forEach((heart) => heart.playAnimation())
+    this.entities.coins.forEach((coin) => coin.playAnimation())
+  }
+
+  update (dir) {
+    this.character.setActualDirection(dir)
+  }
+}
+
+},{}],189:[function(require,module,exports){
 const PIXI = require('pixi.js')
 
 const Character = require('./Character')
 const Entities = require('./Entities')
-const { Directions, Key, KeyState, AnimationIdentifiers } = require('./Constants')
+const Game = require('./Game')
+const { Directions, Key, KeyState } = require('./Constants')
 
 const keyState = {
   [Key.W]: KeyState.Up,
@@ -38248,6 +38267,9 @@ const loader = PIXI.loader
 let character = {}
 let entities = {}
 
+let maxHearts = 10
+let maxCoins = 10
+
 document.body.appendChild(app.view)
 
 loader
@@ -38255,25 +38277,36 @@ loader
   .add('objects', 'assets/gfx/objects.png')
   .load(function (loader, resources) {
     character = new Character(resources.character.texture, 32, 32)
-
-    entities.heart = new Entities.Heart(resources.objects.texture, 64, 64)
-    entities.coin = new Entities.Coin(resources.objects.texture, 128, 128)
-
     app.stage.addChild(character.getAnimation())
-    app.stage.addChild(entities.heart.getAnimation())
-    app.stage.addChild(entities.coin.getAnimation())
 
-    character.playAnimation()
-    entities.heart.playAnimation()
-    entities.coin.playAnimation()
+    entities.hearts = []
+    for (let i = 0; i < maxHearts; ++i) {
+      let rndX = Math.random() * 800
+      let rndY = Math.random() * 600
+      let tmpHeart = new Entities.Heart(resources.objects.texture, rndX, rndY)
+      entities.hearts.push(tmpHeart)
+      app.stage.addChild(tmpHeart.getAnimation())
+      tmpHeart.visible = false
+    }
+
+    entities.coins = []
+    for (let i = 0; i < maxCoins; ++i) {
+      let rndX = Math.random() * 800
+      let rndY = Math.random() * 600
+      let tmpCoin = new Entities.Coin(resources.objects.texture, rndX, rndY)
+      entities.coins.push(tmpCoin)
+      app.stage.addChild(tmpCoin.getAnimation())
+      tmpCoin.visible = false
+    }
 
     initListeners()
 
     // character.setAnimation(AnimationIdentifiers.MoveRight)
+    let game = new Game(character, entities)
 
     app.ticker.add(function () {
       let dir = getCharacterDir()
-      character.setActualDirection(dir)
+      game.update(dir)
     })
   })
 
@@ -38297,4 +38330,4 @@ function initListeners () {
   })
 }
 
-},{"./Character":185,"./Constants":186,"./Entities":187,"pixi.js":138}]},{},[188]);
+},{"./Character":185,"./Constants":186,"./Entities":187,"./Game":188,"pixi.js":138}]},{},[189]);

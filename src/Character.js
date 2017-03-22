@@ -118,5 +118,5 @@ function generateTextureFromTileMap (tileMap, rectangle) {
     y: rectangle.y,
     width: rectangle.width,
     height: rectangle.height
-  });
+  })
 }

@@ -2,9 +2,8 @@ const PIXI = require('pixi.js')
 
 const Character = require('./Character')
 const Entities = require('./Entities')
-const { Directions, Key, KeyState, AnimationIdentifiers } = require('./Constants')
-
-let lastKey = null
+const Game = require('./Game')
+const { Directions, Key, KeyState } = require('./Constants')
 
 const keyState = {
   [Key.W]: KeyState.Up,
@@ -28,6 +27,9 @@ const loader = PIXI.loader
 let character = {}
 let entities = {}
 
+let maxHearts = 10
+let maxCoins = 10
+
 document.body.appendChild(app.view)
 
 loader
@@ -35,25 +37,36 @@ loader
   .add('objects', 'assets/gfx/objects.png')
   .load(function (loader, resources) {
     character = new Character(resources.character.texture, 32, 32)
-
-    entities.heart = new Entities.Heart(resources.objects.texture, 64, 64)
-    entities.coin = new Entities.Coin(resources.objects.texture, 128, 128)
-
     app.stage.addChild(character.getAnimation())
-    app.stage.addChild(entities.heart.getAnimation())
-    app.stage.addChild(entities.coin.getAnimation())
 
-    character.playAnimation()
-    entities.heart.playAnimation()
-    entities.coin.playAnimation()
+    entities.hearts = []
+    for (let i = 0; i < maxHearts; ++i) {
+      let rndX = Math.random() * 800
+      let rndY = Math.random() * 600
+      let tmpHeart = new Entities.Heart(resources.objects.texture, rndX, rndY)
+      entities.hearts.push(tmpHeart)
+      app.stage.addChild(tmpHeart.getAnimation())
+      tmpHeart.visible = false
+    }
+
+    entities.coins = []
+    for (let i = 0; i < maxCoins; ++i) {
+      let rndX = Math.random() * 800
+      let rndY = Math.random() * 600
+      let tmpCoin = new Entities.Coin(resources.objects.texture, rndX, rndY)
+      entities.coins.push(tmpCoin)
+      app.stage.addChild(tmpCoin.getAnimation())
+      tmpCoin.visible = false
+    }
 
     initListeners()
 
     // character.setAnimation(AnimationIdentifiers.MoveRight)
+    let game = new Game(character, entities)
 
     app.ticker.add(function () {
       let dir = getCharacterDir()
-      character.setActualDirection(dir)
+      game.update(dir)
     })
   })
 
