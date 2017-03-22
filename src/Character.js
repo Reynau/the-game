@@ -35,7 +35,7 @@ module.exports = class Character {
     this.animation = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
     this.animation.anchor.set(0.5)
     this.animation.position.set(x, y)
-    this.animation.animationSpeed = 0.05
+    this.animation.animationSpeed = 0.1
   }
 
   getActualDirection () {
