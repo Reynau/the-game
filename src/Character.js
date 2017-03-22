@@ -1,10 +1,12 @@
 const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
-const Constants = require('./Constants')
+const { Directions, AnimationIdentifiers } = require('./Constants')
 
 module.exports = class Character {
   constructor (texture, x, y) {
+    this.baseTexture = texture
+
     this.animationTextures = {}
     this.animationTextures.goDown = []
     this.animationTextures.goDown.push(generateTextureFromTileMap(texture, new Rectangle(0, 0, 16, 32)))
@@ -30,16 +32,10 @@ module.exports = class Character {
     this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(32, 96, 16, 32)))
     this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(48, 96, 16, 32)))
 
-    this.animations = {}
-    this.animations.goDown = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
-    this.animations.goRight = new PIXI.extras.AnimatedSprite(this.animationTextures.goRight)
-    this.animations.goUp = new PIXI.extras.AnimatedSprite(this.animationTextures.goUp)
-    this.animations.goLeft = new PIXI.extras.AnimatedSprite(this.animationTextures.goLeft)
-
-    this.actualAnimation = this.animations.goDown
-    this.actualAnimation.anchor.set(0.5)
-    this.actualAnimation.position.set(x, y)
-    this.actualAnimation.animationSpeed = 0.05
+    this.animation = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
+    this.animation.anchor.set(0.5)
+    this.animation.position.set(x, y)
+    this.animation.animationSpeed = 0.05
   }
 
   getActualDirection () {
@@ -48,40 +44,79 @@ module.exports = class Character {
 
   setActualDirection (direction) {
     this.direction = direction
+    switch (direction) {
+      case Directions.Up:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goUp
+        this.animation.play()
+        this.moveAnimation(0, -1)
+        break
+      case Directions.Down:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goDown
+        this.animation.play()
+        this.moveAnimation(0, 1)
+        break
+      case Directions.Left:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goLeft
+        this.animation.play()
+        this.moveAnimation(-1, 0)
+        break
+      case Directions.Right:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goRight
+        this.animation.play()
+        this.moveAnimation(1, 0)
+        break
+      case null:
+        this.animation.gotoAndStop(0)
+        break
+    }
+  }
+
+  moveAnimation (dx, dy) {
+    let x = this.animation.position.x
+    let y = this.animation.position.y
+
+    this.animation.position.set(x + dx, y + dy)
   }
 
   getAnimation () {
-    return this.actualAnimation
+    return this.animation
   }
 
   setAnimation (animationId) {
     switch (animationId) {
-      case Constants.AnimationIdentifiers.MoveDown:
-        this.actualAnimation = this.animations.goDown
+      case AnimationIdentifiers.MoveDown:
+        this.animation.texture = this.animationTextures.goDown
         break
-      case Constants.AnimationIdentifiers.MoveRight:
-        this.actualAnimation = this.animations.goRight
+      case AnimationIdentifiers.MoveRight:
+        this.animation.texture = this.animationTextures.goRight
         break
-      case Constants.AnimationIdentifiers.MoveUp:
-        this.actualAnimation = this.animations.goUp
+      case AnimationIdentifiers.MoveUp:
+        this.animation.texture = this.animationTextures.goUp
         break
-      case Constants.AnimationIdentifiers.MoveLeft:
-        this.actualAnimation = this.animations.goLeft
+      case AnimationIdentifiers.MoveLeft:
+        this.animation.texture = this.animationTextures.goLeft
         break
     }
   }
 
   playAnimation () {
-    this.actualAnimation.play()
+    this.animation.play()
   }
 
   stopAnimation () {
-    this.actualAnimation.stop()
+    this.animation.stop()
   }
 }
 
 function generateTextureFromTileMap (tileMap, rectangle) {
-  let tempTexture = tileMap.clone()
-  tempTexture.frame = rectangle
-  return tempTexture
+  return new PIXI.Texture(tileMap, {
+    x: rectangle.x,
+    y: rectangle.y,
+    width: rectangle.width,
+    height: rectangle.height
+  });
 }

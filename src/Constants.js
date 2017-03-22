@@ -12,7 +12,21 @@ const AnimationIdentifiers = {
   MoveLeft: 3
 }
 
+const Key = {
+  W: 87,
+  A: 65,
+  S: 83,
+  D: 68
+}
+
+const KeyState = {
+  Up: 0,
+  Down: 1
+}
+
 module.exports = {
   Directions,
-  AnimationIdentifiers
+  AnimationIdentifiers,
+  Key,
+  KeyState
 }

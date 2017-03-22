@@ -37993,12 +37993,15 @@ module.exports = {
 };
 
 },{}],185:[function(require,module,exports){
+const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
-const Constants = require('./Constants')
+const { Directions, AnimationIdentifiers } = require('./Constants')
 
 module.exports = class Character {
   constructor (texture, x, y) {
+    this.baseTexture = texture
+
     this.animationTextures = {}
     this.animationTextures.goDown = []
     this.animationTextures.goDown.push(generateTextureFromTileMap(texture, new Rectangle(0, 0, 16, 32)))
@@ -38024,16 +38027,10 @@ module.exports = class Character {
     this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(32, 96, 16, 32)))
     this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(48, 96, 16, 32)))
 
-    this.animations = {}
-    this.animations.goDown = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
-    this.animations.goRight = new PIXI.extras.AnimatedSprite(this.animationTextures.goRight)
-    this.animations.goUp = new PIXI.extras.AnimatedSprite(this.animationTextures.goUp)
-    this.animations.goLeft = new PIXI.extras.AnimatedSprite(this.animationTextures.goLeft)
-
-    this.actualAnimation = this.animations.goDown
-    this.actualAnimation.anchor.set(0.5)
-    this.actualAnimation.position.set(x, y)
-    this.actualAnimation.animationSpeed = 0.05
+    this.animation = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
+    this.animation.anchor.set(0.5)
+    this.animation.position.set(x, y)
+    this.animation.animationSpeed = 0.05
   }
 
   getActualDirection () {
@@ -38042,63 +38039,119 @@ module.exports = class Character {
 
   setActualDirection (direction) {
     this.direction = direction
+    switch (direction) {
+      case Directions.Up:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goUp
+        this.animation.play()
+        this.moveAnimation(0, -1)
+        break
+      case Directions.Down:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goDown
+        this.animation.play()
+        this.moveAnimation(0, 1)
+        break
+      case Directions.Left:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goLeft
+        this.animation.play()
+        this.moveAnimation(-1, 0)
+        break
+      case Directions.Right:
+        this.animation.stop()
+        this.animation.textures = this.animationTextures.goRight
+        this.animation.play()
+        this.moveAnimation(1, 0)
+        break
+      case null:
+        this.animation.gotoAndStop(0)
+        break
+    }
+  }
+
+  moveAnimation (dx, dy) {
+    let x = this.animation.position.x
+    let y = this.animation.position.y
+
+    this.animation.position.set(x + dx, y + dy)
   }
 
   getAnimation () {
-    return this.actualAnimation
+    return this.animation
   }
 
   setAnimation (animationId) {
     switch (animationId) {
       case AnimationIdentifiers.MoveDown:
-        this.actualAnimation = this.animations.goDown
+        this.animation.texture = this.animationTextures.goDown
         break
       case AnimationIdentifiers.MoveRight:
-        this.actualAnimation = this.animations.goRight
+        this.animation.texture = this.animationTextures.goRight
         break
       case AnimationIdentifiers.MoveUp:
-        this.actualAnimation = this.animations.goUp
+        this.animation.texture = this.animationTextures.goUp
         break
       case AnimationIdentifiers.MoveLeft:
-        this.actualAnimation = this.animations.goLeft
+        this.animation.texture = this.animationTextures.goLeft
         break
     }
   }
 
   playAnimation () {
-    this.actualAnimation.play()
+    this.animation.play()
   }
 
   stopAnimation () {
-    this.actualAnimation.stop()
+    this.animation.stop()
   }
 }
 
 function generateTextureFromTileMap (tileMap, rectangle) {
-  let tempTexture = tileMap.clone()
-  tempTexture.frame = rectangle
-  return tempTexture
+  return new PIXI.Texture(tileMap, {
+    x: rectangle.x,
+    y: rectangle.y,
+    width: rectangle.width,
+    height: rectangle.height
+  });
 }
-},{"./Constants":186}],186:[function(require,module,exports){
+
+},{"./Constants":186,"pixi.js":138}],186:[function(require,module,exports){
 const Directions = {
   Down: 0,
   Right: 1,
   Up: 2,
-  Left: 3,
+  Left: 3
 }
 
 const AnimationIdentifiers = {
   MoveDown: 0,
   MoveRight: 1,
   MoveUp: 2,
-  MoveLeft: 3,
+  MoveLeft: 3
+}
+
+const Key = {
+  W: 87,
+  A: 65,
+  S: 83,
+  D: 68
+}
+
+const KeyState = {
+  Up: 0,
+  Down: 1
 }
 
 module.exports = {
   Directions,
-  AnimationIdentifiers
+  AnimationIdentifiers,
+  Key,
+  KeyState
 }
+
 },{}],187:[function(require,module,exports){
+const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
 class Heart {
@@ -38163,23 +38216,35 @@ function generateTextureFromTileMap (tileMap, rectangle) {
 
 module.exports = {
   Heart,
-  Coin,
+  Coin
 }
-},{}],188:[function(require,module,exports){
+
+},{"pixi.js":138}],188:[function(require,module,exports){
 const PIXI = require('pixi.js')
 
 const Character = require('./Character')
 const Entities = require('./Entities')
+const { Directions, Key, KeyState, AnimationIdentifiers } = require('./Constants')
+
+const keyState = {
+  [Key.W]: KeyState.Up,
+  [Key.A]: KeyState.Up,
+  [Key.S]: KeyState.Up,
+  [Key.D]: KeyState.Up
+}
+
+const dirForKey = {
+  [Key.W]: Directions.Up,
+  [Key.A]: Directions.Left,
+  [Key.S]: Directions.Down,
+  [Key.D]: Directions.Right
+}
 
 // PIXI constants
 const app = new PIXI.Application()
 const loader = PIXI.loader
-const Sprite = PIXI.Sprite
-const Rectangle = PIXI.Rectangle
 
 // Game constants
-const sprites = {}
-
 let character = {}
 let entities = {}
 
@@ -38190,19 +38255,46 @@ loader
   .add('objects', 'assets/gfx/objects.png')
   .load(function (loader, resources) {
     character = new Character(resources.character.texture, 32, 32)
-    character.playAnimation()
 
     entities.heart = new Entities.Heart(resources.objects.texture, 64, 64)
-    entities.heart.playAnimation()
-
     entities.coin = new Entities.Coin(resources.objects.texture, 128, 128)
-    entities.coin.playAnimation()
 
     app.stage.addChild(character.getAnimation())
     app.stage.addChild(entities.heart.getAnimation())
     app.stage.addChild(entities.coin.getAnimation())
+
+    character.playAnimation()
+    entities.heart.playAnimation()
+    entities.coin.playAnimation()
+
+    initListeners()
+
+    // character.setAnimation(AnimationIdentifiers.MoveRight)
+
+    app.ticker.add(function () {
+      let dir = getCharacterDir()
+      character.setActualDirection(dir)
+    })
   })
 
+function getCharacterDir () {
+  if (keyState[Key.W] === KeyState.Down) return Directions.Up
+  if (keyState[Key.A] === KeyState.Down) return Directions.Left
+  if (keyState[Key.S] === KeyState.Down) return Directions.Down
+  if (keyState[Key.D] === KeyState.Down) return Directions.Right
+  return null
+}
 
+function initListeners () {
+  document.addEventListener('keydown', (e) => {
+    let state = keyState[e.keyCode]
+    if (state != null && state === KeyState.Up) keyState[e.keyCode] = KeyState.Down
+  })
 
-},{"./Character":185,"./Entities":187,"pixi.js":138}]},{},[188]);
+  document.addEventListener('keyup', (e) => {
+    let state = keyState[e.keyCode]
+    if (state != null && state === KeyState.Down) keyState[e.keyCode] = KeyState.Up
+  })
+}
+
+},{"./Character":185,"./Constants":186,"./Entities":187,"pixi.js":138}]},{},[188]);
