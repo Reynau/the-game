@@ -38,44 +38,48 @@ module.exports = class Character {
     this.animation.animationSpeed = 0.1
   }
 
-  getActualDirection () {
-    return this.direction
-  }
-
-  setActualDirection (direction) {
-    this.direction = direction
+  move (direction) {
+    if (this.direction != direction) {
+      switch (direction) {
+        case Directions.Up:
+          this.animation.textures = this.animationTextures.goUp
+          this.animation.gotoAndPlay(1)
+          break
+        case Directions.Down:
+          this.animation.textures = this.animationTextures.goDown
+          this.animation.gotoAndPlay(1)
+          break
+        case Directions.Left:
+          this.animation.textures = this.animationTextures.goLeft
+          this.animation.gotoAndPlay(1)
+          break
+        case Directions.Right:
+          this.animation.textures = this.animationTextures.goRight
+          this.animation.gotoAndPlay(1)
+          break
+        case null:
+          this.animation.gotoAndStop(0)
+          break
+      }
+      this.direction = direction
+    }
     switch (direction) {
       case Directions.Up:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goUp
-        this.animation.play()
-        this.moveAnimation(0, -1)
+        this.moveCharacter(0, -1)
         break
       case Directions.Down:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goDown
-        this.animation.play()
-        this.moveAnimation(0, 1)
+        this.moveCharacter(0, 1)
         break
       case Directions.Left:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goLeft
-        this.animation.play()
-        this.moveAnimation(-1, 0)
+        this.moveCharacter(-1, 0)
         break
       case Directions.Right:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goRight
-        this.animation.play()
-        this.moveAnimation(1, 0)
-        break
-      case null:
-        this.animation.gotoAndStop(0)
+        this.moveCharacter(1, 0)
         break
     }
   }
 
-  moveAnimation (dx, dy) {
+  moveCharacter (dx, dy) {
     let x = this.animation.position.x
     let y = this.animation.position.y
 
@@ -84,23 +88,6 @@ module.exports = class Character {
 
   getAnimation () {
     return this.animation
-  }
-
-  setAnimation (animationId) {
-    switch (animationId) {
-      case AnimationIdentifiers.MoveDown:
-        this.animation.texture = this.animationTextures.goDown
-        break
-      case AnimationIdentifiers.MoveRight:
-        this.animation.texture = this.animationTextures.goRight
-        break
-      case AnimationIdentifiers.MoveUp:
-        this.animation.texture = this.animationTextures.goUp
-        break
-      case AnimationIdentifiers.MoveLeft:
-        this.animation.texture = this.animationTextures.goLeft
-        break
-    }
   }
 
   playAnimation () {

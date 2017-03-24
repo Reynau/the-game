@@ -11,6 +11,6 @@ module.exports = class Game {
   }
 
   update (dir) {
-    this.character.setActualDirection(dir)
+    this.character.move(dir)
   }
 }
