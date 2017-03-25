@@ -26,6 +26,10 @@ class Heart {
   stopAnimation () {
     this.animation.stop()
   }
+
+  getPosition () {
+    return this.animation.position
+  }
 }
 
 class Coin {
@@ -52,6 +56,10 @@ class Coin {
 
   stopAnimation () {
     this.animation.stop()
+  }
+
+  getPosition () {
+    return this.animation.position
   }
 }
 

@@ -1,7 +1,7 @@
 const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
-const { Directions, AnimationIdentifiers } = require('./Constants')
+const { Directions } = require('./Constants')
 
 module.exports = class Character {
   constructor (texture, x, y) {
@@ -36,10 +36,14 @@ module.exports = class Character {
     this.animation.anchor.set(0.5)
     this.animation.position.set(x, y)
     this.animation.animationSpeed = 0.1
+
+    this.direction = null
+    this.coins = 0
+    this.health = 0
   }
 
   move (direction) {
-    if (this.direction != direction) {
+    if (this.direction !== direction) {
       switch (direction) {
         case Directions.Up:
           this.animation.textures = this.animationTextures.goUp
@@ -90,12 +94,18 @@ module.exports = class Character {
     return this.animation
   }
 
-  playAnimation () {
-    this.animation.play()
+  getPosition () {
+    return this.animation.position
   }
 
-  stopAnimation () {
-    this.animation.stop()
+  addCoins (coins) {
+    this.coins += coins
+    console.log('Coins: ' + this.coins)
+  }
+
+  addHealth (health) {
+    this.health += health
+    console.log('Health: ' + this.health)
   }
 }
 

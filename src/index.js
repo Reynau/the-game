@@ -14,13 +14,6 @@ const keyState = {
 
 let lastKey = null
 
-const dirForKey = {
-  [Key.W]: Directions.Up,
-  [Key.A]: Directions.Left,
-  [Key.S]: Directions.Down,
-  [Key.D]: Directions.Right
-}
-
 // PIXI constants
 const app = new PIXI.Application()
 const loader = PIXI.loader
@@ -67,12 +60,12 @@ loader
     let game = new Game(character, entities)
 
     app.ticker.add(function () {
-      let dir = getCharacterDir()
-      game.update(dir)
+      let dir = getDirection()
+      game.update(dir, keyState)
     })
   })
 
-function getCharacterDir () {
+function getDirection () {
   if (keyState[Key.W] === KeyState.Down && Key.W === lastKey) return Directions.Up
   if (keyState[Key.A] === KeyState.Down && Key.A === lastKey) return Directions.Left
   if (keyState[Key.S] === KeyState.Down && Key.S === lastKey) return Directions.Down
@@ -89,7 +82,7 @@ function getCharacterDir () {
 function initListeners () {
   document.addEventListener('keydown', (e) => {
     let state = keyState[e.keyCode]
-    if (state != null && state === KeyState.Up) {
+    if (state !== null && state === KeyState.Up) {
       keyState[e.keyCode] = KeyState.Down
       lastKey = e.keyCode
     }
@@ -97,6 +90,6 @@ function initListeners () {
 
   document.addEventListener('keyup', (e) => {
     let state = keyState[e.keyCode]
-    if (state != null && state === KeyState.Down) keyState[e.keyCode] = KeyState.Up
+    if (state !== null && state === KeyState.Down) keyState[e.keyCode] = KeyState.Up
   })
 }
