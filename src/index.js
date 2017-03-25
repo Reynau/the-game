@@ -12,6 +12,8 @@ const keyState = {
   [Key.D]: KeyState.Up
 }
 
+let lastKey = null
+
 const dirForKey = {
   [Key.W]: Directions.Up,
   [Key.A]: Directions.Left,
@@ -71,17 +73,26 @@ loader
   })
 
 function getCharacterDir () {
+  if (keyState[Key.W] === KeyState.Down && Key.W === lastKey) return Directions.Up
+  if (keyState[Key.A] === KeyState.Down && Key.A === lastKey) return Directions.Left
+  if (keyState[Key.S] === KeyState.Down && Key.S === lastKey) return Directions.Down
+  if (keyState[Key.D] === KeyState.Down && Key.D === lastKey) return Directions.Right
+
   if (keyState[Key.W] === KeyState.Down) return Directions.Up
   if (keyState[Key.A] === KeyState.Down) return Directions.Left
   if (keyState[Key.S] === KeyState.Down) return Directions.Down
   if (keyState[Key.D] === KeyState.Down) return Directions.Right
+
   return null
 }
 
 function initListeners () {
   document.addEventListener('keydown', (e) => {
     let state = keyState[e.keyCode]
-    if (state != null && state === KeyState.Up) keyState[e.keyCode] = KeyState.Down
+    if (state != null && state === KeyState.Up) {
+      keyState[e.keyCode] = KeyState.Down
+      lastKey = e.keyCode
+    }
   })
 
   document.addEventListener('keyup', (e) => {
