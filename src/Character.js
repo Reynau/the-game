@@ -1,10 +1,11 @@
 const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
-const { Directions } = require('./Constants')
+const { Directions, KeyState, Key } = require('./Constants')
 
 module.exports = class Character {
-  constructor (texture, x, y) {
+  constructor (keyboardHandler, texture, x, y) {
+    this.keyboardHandler = keyboardHandler
     this.baseTexture = texture
 
     this.animationTextures = {}
@@ -42,7 +43,25 @@ module.exports = class Character {
     this.health = 0
   }
 
-  move (direction) {
+  getDirection () {
+    let keyState = this.keyboardHandler.getKeyState()
+    let lastKey = this.keyboardHandler.getLastKey()
+
+    if (keyState[Key.W] === KeyState.Down && Key.W === lastKey) return Directions.Up
+    if (keyState[Key.A] === KeyState.Down && Key.A === lastKey) return Directions.Left
+    if (keyState[Key.S] === KeyState.Down && Key.S === lastKey) return Directions.Down
+    if (keyState[Key.D] === KeyState.Down && Key.D === lastKey) return Directions.Right
+
+    if (keyState[Key.W] === KeyState.Down) return Directions.Up
+    if (keyState[Key.A] === KeyState.Down) return Directions.Left
+    if (keyState[Key.S] === KeyState.Down) return Directions.Down
+    if (keyState[Key.D] === KeyState.Down) return Directions.Right
+
+    return null
+  }
+
+  move () {
+    let direction = this.getDirection()
     if (this.direction !== direction) {
       switch (direction) {
         case Directions.Up:

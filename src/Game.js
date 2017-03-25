@@ -9,14 +9,10 @@ module.exports = class Game {
     this.entities.coins.forEach((coin) => coin.playAnimation())
   }
 
-  update (dir, keyState) {
+  update () {
     // let action = this.getAction(keyState)
-    this.character.move(dir)
+    this.character.move()
     this.checkCollisions()
-  }
-
-  getAction (keyState) {
-    return null
   }
 
   checkCollisions () {
