@@ -1165,7 +1165,7 @@ if ('undefined' !== typeof module) {
 
 },{}],4:[function(require,module,exports){
 /**
- * isMobile.js v0.4.0
+ * isMobile.js v0.4.1
  *
  * A simple library to detect Apple phones and tablets,
  * Android phones and tablets, other mobile devices (like blackberry, mini-opera and windows phone),
@@ -1184,7 +1184,7 @@ if ('undefined' !== typeof module) {
         android_tablet      = /Android/i,
         amazon_phone        = /(?=.*\bAndroid\b)(?=.*\bSD4930UR\b)/i,
         amazon_tablet       = /(?=.*\bAndroid\b)(?=.*\b(?:KFOT|KFTT|KFJWI|KFJWA|KFSOWI|KFTHWI|KFTHWA|KFAPWI|KFAPWA|KFARWI|KFASWI|KFSAWI|KFSAWA)\b)/i,
-        windows_phone       = /IEMobile/i,
+        windows_phone       = /Windows Phone/i,
         windows_tablet      = /(?=.*\bWindows\b)(?=.*\bARM\b)/i, // Match 'Windows' AND 'ARM'
         other_blackberry    = /BlackBerry/i,
         other_blackberry_10 = /BB10/i,
@@ -4358,7 +4358,7 @@ exports.__esModule = true;
  * @name VERSION
  * @type {string}
  */
-var VERSION = exports.VERSION = '4.4.1';
+var VERSION = exports.VERSION = '4.4.4';
 
 /**
  * Two Pi.
@@ -5771,6 +5771,15 @@ var DisplayObject = function (_EventEmitter) {
          * @private
          */
         _this._mask = null;
+
+        /**
+         * If the object has been destroyed via destroy(). If true, it should not be used.
+         *
+         * @member {boolean}
+         * @private
+         * @readonly
+         */
+        _this._destroyed = false;
         return _this;
     }
 
@@ -6054,6 +6063,8 @@ var DisplayObject = function (_EventEmitter) {
 
         this.interactive = false;
         this.interactiveChildren = false;
+
+        this._destroyed = true;
     };
 
     /**
@@ -14228,6 +14239,14 @@ var Filter = function () {
      * @member {boolean}
      */
     this.enabled = true;
+
+    /**
+     * If enabled, pixi will fit the filter area into boundaries for better performance.
+     * Switch it off if it does not work for specific shader.
+     *
+     * @member {boolean}
+     */
+    this.autoFit = true;
   }
 
   /**
@@ -14648,7 +14667,7 @@ var FilterManager = function (_WebGLManager) {
         if (filterData.stack[0].renderTarget.transform) {//
 
             // TODO we should fit the rect around the transform..
-        } else {
+        } else if (filters[0].autoFit) {
             sourceFrame.fit(filterData.stack[0].destinationFrame);
         }
 
@@ -19868,6 +19887,15 @@ var BaseTexture = function (_EventEmitter) {
         }
 
         /**
+         * If the object has been destroyed via destroy(). If true, it should not be used.
+         *
+         * @member {boolean}
+         * @private
+         * @readonly
+         */
+        _this._destroyed = false;
+
+        /**
          * Fired when a not-immediately-available source finishes loading.
          *
          * @protected
@@ -20237,6 +20265,8 @@ var BaseTexture = function (_EventEmitter) {
         this.source = null;
 
         this.dispose();
+
+        this._destroyed = true;
     };
 
     /**
@@ -21405,6 +21435,7 @@ function removeAllHandlers(tex) {
  */
 Texture.EMPTY = new Texture(new _BaseTexture2.default());
 removeAllHandlers(Texture.EMPTY);
+removeAllHandlers(Texture.EMPTY.baseTexture);
 
 /**
  * A white texture of 10x10 size, used for graphics and other things
@@ -21415,6 +21446,7 @@ removeAllHandlers(Texture.EMPTY);
  */
 Texture.WHITE = createWhiteTexture();
 removeAllHandlers(Texture.WHITE);
+removeAllHandlers(Texture.WHITE.baseTexture);
 
 },{"../math":56,"../utils":108,"./BaseTexture":97,"./TextureUvs":101,"./VideoBaseTexture":102,"eventemitter3":3}],101:[function(require,module,exports){
 'use strict';
@@ -26303,10 +26335,13 @@ DisplayObject.prototype._destroyCachedDisplayObject = function _destroyCachedDis
  * Destroys the cached object.
  *
  * @private
+ * @param {object|boolean} [options] - Options parameter. A boolean will act as if all options
+ *  have been set to that value.
+ *  Used when destroying containers, see the Container.destroy method.
  */
-DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapDestroy() {
+DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapDestroy(options) {
     this.cacheAsBitmap = false;
-    this.destroy();
+    this.destroy(options);
 };
 
 },{"../core":51}],122:[function(require,module,exports){
@@ -29183,8 +29218,6 @@ var InteractionManager = function (_EventEmitter) {
                 }
             }
 
-        var keepHitTestingAfterChildren = hitTest;
-
         // ** FREE TIP **! If an object is not interactive or has no buttons in it
         // (such as a game scene!) set interactiveChildren to false for that displayObject.
         // This will allow pixi to completely ignore and bypass checking the displayObjects children.
@@ -29195,14 +29228,14 @@ var InteractionManager = function (_EventEmitter) {
                 var child = children[i];
 
                 // time to get recursive.. if this function will return if something is hit..
-                if (this.processInteractive(interactionEvent, child, func, hitTest, interactiveParent)) {
+                var childHit = this.processInteractive(interactionEvent, child, func, hitTest, interactiveParent);
+
+                if (childHit) {
                     // its a good idea to check if a child has lost its parent.
                     // this means it has been removed whilst looping so its best
                     if (!child.parent) {
                         continue;
                     }
-
-                    hit = true;
 
                     // we no longer need to hit test any more objects in this container as we we
                     // now know the parent has been hit
@@ -29213,30 +29246,32 @@ var InteractionManager = function (_EventEmitter) {
                     // This means we no longer need to hit test anything else. We still need to run
                     // through all objects, but we don't need to perform any hit tests.
 
-                    keepHitTestingAfterChildren = false;
-
-                    if (child.interactive) {
-                        hitTest = false;
+                    if (childHit) {
+                        if (interactionEvent.target) {
+                            hitTest = false;
+                        }
+                        hit = true;
                     }
-
-                    // we can break now as we have hit an object.
                 }
             }
         }
-
-        hitTest = keepHitTestingAfterChildren;
 
         // no point running this if the item is not interactive or does not have an interactive parent.
         if (interactive) {
             // if we are hit testing (as in we have no hit any objects yet)
             // We also don't need to worry about hit testing if once of the displayObjects children
-            // has already been hit!
-            if (hitTest && !hit) {
+            // has already been hit - but only if it was interactive, otherwise we need to keep
+            // looking for an interactive child, just in case we hit one
+            if (hitTest && !interactionEvent.target) {
                 if (displayObject.hitArea) {
                     displayObject.worldTransform.applyInverse(point, this._tempPoint);
-                    hit = displayObject.hitArea.contains(this._tempPoint.x, this._tempPoint.y);
+                    if (displayObject.hitArea.contains(this._tempPoint.x, this._tempPoint.y)) {
+                        hit = true;
+                    }
                 } else if (displayObject.containsPoint) {
-                    hit = displayObject.containsPoint(point);
+                    if (displayObject.containsPoint(point)) {
+                        hit = true;
+                    }
                 }
             }
 
@@ -29245,7 +29280,7 @@ var InteractionManager = function (_EventEmitter) {
                     interactionEvent.target = displayObject;
                 }
 
-                func(interactionEvent, displayObject, hit);
+                func(interactionEvent, displayObject, !!hit);
             }
         }
 
@@ -29466,9 +29501,9 @@ var InteractionManager = function (_EventEmitter) {
             // update the down state of the tracking data
             if (trackingData) {
                 if (isRightButton) {
-                    trackingData.rightDown = hit;
+                    trackingData.rightDown = false;
                 } else {
-                    trackingData.leftDown = hit;
+                    trackingData.leftDown = false;
                 }
             }
         }
@@ -29598,6 +29633,10 @@ var InteractionManager = function (_EventEmitter) {
         this.emit('pointerout', interactionEvent);
         if (event.pointerType === 'mouse') {
             this.emit('mouseout', interactionEvent);
+        } else {
+            // we can get touchleave events after touchend, so we want to make sure we don't
+            // introduce memory leaks
+            this.releaseInteractionDataForPointerId(interactionData.identifier);
         }
     };
 
@@ -33517,11 +33556,13 @@ var BasePrepare = function () {
             var item = this.queue[0];
             var uploaded = false;
 
-            for (var i = 0, len = this.uploadHooks.length; i < len; i++) {
-                if (this.uploadHooks[i](this.uploadHookHelper, item)) {
-                    this.queue.shift();
-                    uploaded = true;
-                    break;
+            if (item && !item._destroyed) {
+                for (var i = 0, len = this.uploadHooks.length; i < len; i++) {
+                    if (this.uploadHooks[i](this.uploadHookHelper, item)) {
+                        this.queue.shift();
+                        uploaded = true;
+                        break;
+                    }
                 }
             }
 
@@ -37996,10 +38037,11 @@ module.exports = {
 const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
-const { Directions, AnimationIdentifiers } = require('./Constants')
+const { Directions, KeyState, Key } = require('./Constants')
 
 module.exports = class Character {
-  constructor (texture, x, y) {
+  constructor (keyboardHandler, texture, x, y) {
+    this.keyboardHandler = keyboardHandler
     this.baseTexture = texture
 
     this.animationTextures = {}
@@ -38031,46 +38073,72 @@ module.exports = class Character {
     this.animation.anchor.set(0.5)
     this.animation.position.set(x, y)
     this.animation.animationSpeed = 0.1
+
+    this.direction = null
+    this.coins = 0
+    this.health = 0
   }
 
-  getActualDirection () {
-    return this.direction
+  getDirection () {
+    let keyState = this.keyboardHandler.getKeyState()
+    let lastKey = this.keyboardHandler.getLastKey()
+
+    if (keyState[Key.W] === KeyState.Down && Key.W === lastKey) return Directions.Up
+    if (keyState[Key.A] === KeyState.Down && Key.A === lastKey) return Directions.Left
+    if (keyState[Key.S] === KeyState.Down && Key.S === lastKey) return Directions.Down
+    if (keyState[Key.D] === KeyState.Down && Key.D === lastKey) return Directions.Right
+
+    if (keyState[Key.W] === KeyState.Down) return Directions.Up
+    if (keyState[Key.A] === KeyState.Down) return Directions.Left
+    if (keyState[Key.S] === KeyState.Down) return Directions.Down
+    if (keyState[Key.D] === KeyState.Down) return Directions.Right
+
+    return null
   }
 
-  setActualDirection (direction) {
-    this.direction = direction
+  move () {
+    let direction = this.getDirection()
+    if (this.direction !== direction) {
+      switch (direction) {
+        case Directions.Up:
+          this.animation.textures = this.animationTextures.goUp
+          this.animation.gotoAndPlay(1)
+          break
+        case Directions.Down:
+          this.animation.textures = this.animationTextures.goDown
+          this.animation.gotoAndPlay(1)
+          break
+        case Directions.Left:
+          this.animation.textures = this.animationTextures.goLeft
+          this.animation.gotoAndPlay(1)
+          break
+        case Directions.Right:
+          this.animation.textures = this.animationTextures.goRight
+          this.animation.gotoAndPlay(1)
+          break
+        case null:
+          this.animation.gotoAndStop(0)
+          break
+      }
+      this.direction = direction
+    }
     switch (direction) {
       case Directions.Up:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goUp
-        this.animation.play()
-        this.moveAnimation(0, -1)
+        this.moveCharacter(0, -1)
         break
       case Directions.Down:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goDown
-        this.animation.play()
-        this.moveAnimation(0, 1)
+        this.moveCharacter(0, 1)
         break
       case Directions.Left:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goLeft
-        this.animation.play()
-        this.moveAnimation(-1, 0)
+        this.moveCharacter(-1, 0)
         break
       case Directions.Right:
-        this.animation.stop()
-        this.animation.textures = this.animationTextures.goRight
-        this.animation.play()
-        this.moveAnimation(1, 0)
-        break
-      case null:
-        this.animation.gotoAndStop(0)
+        this.moveCharacter(1, 0)
         break
     }
   }
 
-  moveAnimation (dx, dy) {
+  moveCharacter (dx, dy) {
     let x = this.animation.position.x
     let y = this.animation.position.y
 
@@ -38081,29 +38149,18 @@ module.exports = class Character {
     return this.animation
   }
 
-  setAnimation (animationId) {
-    switch (animationId) {
-      case AnimationIdentifiers.MoveDown:
-        this.animation.texture = this.animationTextures.goDown
-        break
-      case AnimationIdentifiers.MoveRight:
-        this.animation.texture = this.animationTextures.goRight
-        break
-      case AnimationIdentifiers.MoveUp:
-        this.animation.texture = this.animationTextures.goUp
-        break
-      case AnimationIdentifiers.MoveLeft:
-        this.animation.texture = this.animationTextures.goLeft
-        break
-    }
+  getPosition () {
+    return this.animation.position
   }
 
-  playAnimation () {
-    this.animation.play()
+  addCoins (coins) {
+    this.coins += coins
+    console.log('Coins: ' + this.coins)
   }
 
-  stopAnimation () {
-    this.animation.stop()
+  addHealth (health) {
+    this.health += health
+    console.log('Health: ' + this.health)
   }
 }
 
@@ -38179,6 +38236,10 @@ class Heart {
   stopAnimation () {
     this.animation.stop()
   }
+
+  getPosition () {
+    return this.animation.position
+  }
 }
 
 class Coin {
@@ -38206,6 +38267,10 @@ class Coin {
   stopAnimation () {
     this.animation.stop()
   }
+
+  getPosition () {
+    return this.animation.position
+  }
 }
 
 function generateTextureFromTileMap (tileMap, rectangle) {
@@ -38227,37 +38292,94 @@ module.exports = class Game {
     this.entities = entities
 
     // Temporal lines
-    this.character.playAnimation()
     this.entities.hearts.forEach((heart) => heart.playAnimation())
     this.entities.coins.forEach((coin) => coin.playAnimation())
   }
 
-  update (dir) {
-    this.character.setActualDirection(dir)
+  update () {
+    // let action = this.getAction(keyState)
+    this.character.move()
+    this.checkCollisions()
+  }
+
+  checkCollisions () {
+    this.entities.hearts.forEach((heart) => {
+      if (!heart.animation.visible) return
+
+      if (this.collision(this.character, heart)) {
+        heart.animation.visible = false
+        this.character.addHealth(1)
+      }
+    })
+    this.entities.coins.forEach((coins) => {
+      if (!coins.animation.visible) return
+
+      if (this.collision(this.character, coins)) {
+        coins.animation.visible = false
+        this.character.addCoins(1)
+      }
+    })
+  }
+
+  collision (character, item) {
+    let charPos = character.getPosition()
+    let itemPos = item.getPosition()
+
+    if (((charPos.x <= itemPos.x && charPos.x + 16 >= itemPos.x) || (charPos.x >= itemPos.x && charPos.x <= itemPos.x + 16)) &&
+        ((charPos.y <= itemPos.y && charPos.y + 16 >= itemPos.y) || (charPos.y >= itemPos.y && charPos.y <= itemPos.y + 16))) {
+      return true
+    }
   }
 }
 
 },{}],189:[function(require,module,exports){
+
+const { KeyState, Key } = require('./Constants')
+
+module.exports = class KeyboardHandler {
+  constructor () {
+    this.lastKey = null
+    this.keyState = {
+      [Key.W]: KeyState.Up,
+      [Key.A]: KeyState.Up,
+      [Key.S]: KeyState.Up,
+      [Key.D]: KeyState.Up
+    }
+
+    this.initListeners()
+  }
+
+  getLastKey () {
+    return this.lastKey
+  }
+
+  getKeyState () {
+    return this.keyState
+  }
+
+  initListeners () {
+    document.addEventListener('keydown', (e) => {
+      let state = this.keyState[e.keyCode]
+      if (state !== null && state === KeyState.Up) {
+        this.keyState[e.keyCode] = KeyState.Down
+        this.lastKey = e.keyCode
+      }
+    })
+
+    document.addEventListener('keyup', (e) => {
+      let state = this.keyState[e.keyCode]
+      if (state !== null && state === KeyState.Down) this.keyState[e.keyCode] = KeyState.Up
+    })
+  }
+}
+
+},{"./Constants":186}],190:[function(require,module,exports){
 const PIXI = require('pixi.js')
 
 const Character = require('./Character')
 const Entities = require('./Entities')
 const Game = require('./Game')
-const { Directions, Key, KeyState } = require('./Constants')
-
-const keyState = {
-  [Key.W]: KeyState.Up,
-  [Key.A]: KeyState.Up,
-  [Key.S]: KeyState.Up,
-  [Key.D]: KeyState.Up
-}
-
-const dirForKey = {
-  [Key.W]: Directions.Up,
-  [Key.A]: Directions.Left,
-  [Key.S]: Directions.Down,
-  [Key.D]: Directions.Right
-}
+const KeyboardHandler = require('./KeyboardHandler')
 
 // PIXI constants
 const app = new PIXI.Application()
@@ -38276,7 +38398,8 @@ loader
   .add('character', 'assets/gfx/character.png')
   .add('objects', 'assets/gfx/objects.png')
   .load(function (loader, resources) {
-    character = new Character(resources.character.texture, 32, 32)
+    let keyboardHandler = new KeyboardHandler()
+    character = new Character(keyboardHandler, resources.character.texture, 32, 32)
     app.stage.addChild(character.getAnimation())
 
     entities.hearts = []
@@ -38299,35 +38422,11 @@ loader
       tmpCoin.visible = false
     }
 
-    initListeners()
-
-    // character.setAnimation(AnimationIdentifiers.MoveRight)
     let game = new Game(character, entities)
 
     app.ticker.add(function () {
-      let dir = getCharacterDir()
-      game.update(dir)
+      game.update()
     })
   })
 
-function getCharacterDir () {
-  if (keyState[Key.W] === KeyState.Down) return Directions.Up
-  if (keyState[Key.A] === KeyState.Down) return Directions.Left
-  if (keyState[Key.S] === KeyState.Down) return Directions.Down
-  if (keyState[Key.D] === KeyState.Down) return Directions.Right
-  return null
-}
-
-function initListeners () {
-  document.addEventListener('keydown', (e) => {
-    let state = keyState[e.keyCode]
-    if (state != null && state === KeyState.Up) keyState[e.keyCode] = KeyState.Down
-  })
-
-  document.addEventListener('keyup', (e) => {
-    let state = keyState[e.keyCode]
-    if (state != null && state === KeyState.Down) keyState[e.keyCode] = KeyState.Up
-  })
-}
-
-},{"./Character":185,"./Constants":186,"./Entities":187,"./Game":188,"pixi.js":138}]},{},[189]);
+},{"./Character":185,"./Entities":187,"./Game":188,"./KeyboardHandler":189,"pixi.js":138}]},{},[190]);
