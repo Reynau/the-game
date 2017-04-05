@@ -1,4 +1,7 @@
 const PIXI = require('pixi.js')
+const path = require('path')
+const tmx = require('tmx-parser')
+PIXI.extras.TiledMap = require('./Tiled/TiledMap');
 
 const Character = require('./Character')
 const Entities = require('./Entities')
@@ -18,10 +21,27 @@ let maxCoins = 10
 
 document.body.appendChild(app.view)
 
+app.stop()
 loader
   .add('character', 'assets/gfx/character.png')
   .add('objects', 'assets/gfx/objects.png')
+  .add('map', 'maps/testmap.tmx')
+  .add('assets/gfx/Overworld.png')
+  .use((resource, next) => {
+    if (!(resource.name === "map")) {
+      return next();
+    }
+    let route = path.dirname(resource.url.replace(this.baseUrl, ''));
+    tmx.parse(resource.xhr.responseText, route, function (err, map) {
+      if (err) throw err;
+      resource.data = map;
+      next();
+    });
+  })
   .load(function (loader, resources) {
+    let tileMap = new PIXI.extras.TiledMap('map');
+    app.stage.addChild(tileMap);
+
     let keyboardHandler = new KeyboardHandler()
     character = new Character(keyboardHandler, resources.character.texture, 32, 32)
     app.stage.addChild(character.getAnimation())
@@ -51,4 +71,6 @@ loader
     app.ticker.add(function () {
       game.update()
     })
+
+    app.start()
   })
