@@ -1,7 +1,7 @@
 const PIXI = require('pixi.js')
 const path = require('path')
 const tmx = require('tmx-parser')
-PIXI.extras.TiledMap = require('./Tiled/TiledMap');
+PIXI.extras.TiledMap = require('./Tiled/TiledMap')
 
 const Character = require('./Character')
 const Entities = require('./Entities')
@@ -28,19 +28,19 @@ loader
   .add('map', 'maps/testmap.tmx')
   .add('assets/gfx/Overworld.png')
   .use((resource, next) => {
-    if (!(resource.name === "map")) {
-      return next();
+    if (!(resource.name === 'map')) {
+      return next()
     }
-    let route = path.dirname(resource.url.replace(this.baseUrl, ''));
+    let route = path.dirname(resource.url.replace(this.baseUrl, ''))
     tmx.parse(resource.xhr.responseText, route, function (err, map) {
-      if (err) throw err;
-      resource.data = map;
-      next();
-    });
+      if (err) throw err
+      resource.data = map
+      next()
+    })
   })
   .load(function (loader, resources) {
-    let tileMap = new PIXI.extras.TiledMap('map');
-    app.stage.addChild(tileMap);
+    let tileMap = new PIXI.extras.TiledMap('map')
+    app.stage.addChild(tileMap)
 
     let keyboardHandler = new KeyboardHandler()
     character = new Character(keyboardHandler, resources.character.texture, 32, 32)

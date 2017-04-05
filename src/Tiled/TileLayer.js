@@ -1,68 +1,66 @@
-var Tile = require('./Tile');
+var Tile = require('./Tile')
 
-function findTileset(gid, tilesets) {
-    var tileset;
-    for (var i = tilesets.length - 1; i >= 0; i--) {
-        tileset = tilesets[i];
-        if (tileset.firstGid <= gid) {
-            break;
-        }
+function findTileset (gid, tilesets) {
+  var tileset
+  for (var i = tilesets.length - 1; i >= 0; i--) {
+    tileset = tilesets[i]
+    if (tileset.firstGid <= gid) {
+      break
     }
-    return tileset;
+  }
+  return tileset
 }
 
-var TileLayer = function(layer, tileSets) {
-    PIXI.Container.call(this);
+var TileLayer = function (layer, tileSets) {
+  PIXI.Container.call(this)
 
-    for (var property in layer) {
-        if (layer.hasOwnProperty(property)) {
-            this[property] = layer[property];
-        }
+  for (var property in layer) {
+    if (layer.hasOwnProperty(property)) {
+      this[property] = layer[property]
     }
+  }
 
-    this.alpha = parseFloat(layer.opacity);
-    this.tiles = [];
+  this.alpha = parseFloat(layer.opacity)
+  this.tiles = []
 
-    for (var y = 0; y < layer.map.height; y++) {
-        for (var x = 0; x < layer.map.width; x++) {
-            var i = x + (y * layer.map.width);
+  for (var y = 0; y < layer.map.height; y++) {
+    for (var x = 0; x < layer.map.width; x++) {
+      var i = x + (y * layer.map.width)
 
-            if (layer.tiles[i]) {
+      if (layer.tiles[i]) {
+        if (layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
+          var tileset = findTileset(layer.tiles[i].gid, tileSets)
+          var tile = new Tile(layer.tiles[i], tileset, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i])
 
-                if (layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
+          tile.x = x * layer.map.tileWidth
+          tile.y = y * layer.map.tileHeight + (layer.map.tileHeight - tile.textures[0].height)
 
-                    var tileset = findTileset(layer.tiles[i].gid, tileSets);
-                    var tile = new Tile(layer.tiles[i], tileset, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i]);
+          tile._x = x
+          tile._y = y
 
-                    tile.x = x * layer.map.tileWidth;
-                    tile.y = y * layer.map.tileHeight + ( layer.map.tileHeight - tile.textures[0].height );
+          if (tileset.tileOffset) {
+            tile.x += tileset.tileOffset.x
+            tile.y += tileset.tileOffset.y
+          }
 
-                    tile._x = x;
-                    tile._y = y;
+          if (tile.textures.length > 1) {
+            tile.animationSpeed = 1000 / 60 / tile.animations[0].duration
+            tile.gotoAndPlay(0)
+          }
 
-                    if (tileset.tileOffset) {
-                        tile.x += tileset.tileOffset.x;
-                        tile.y += tileset.tileOffset.y;
-                    }
+          this.tiles.push(tile)
 
-                    if (tile.textures.length > 1) {
-                        tile.animationSpeed = 1000 / 60 / tile.animations[0].duration;
-                        tile.gotoAndPlay(0);
-                    }
-
-                    this.tiles.push(tile);
-
-                    this.addTile(tile);
-                }
-            }
+          this.addTile(tile)
         }
+      }
     }
-};
+  }
+}
 
-TileLayer.prototype = Object.create(PIXI.Container.prototype);
+TileLayer.prototype = Object.create(PIXI.Container.prototype)
 
-TileLayer.prototype.addTile = function(tile) {
-    this.addChild(tile);
-};
+TileLayer.prototype.addTile = function (tile) {
+  this.addChild(tile)
+}
 
-module.exports = TileLayer;
+module.exports = TileLayer
