@@ -1,5 +1,5 @@
 {
-  "name": "eat-the-chocolate",
+  "name": "the-game",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Reynau/eat-the-chocolate.git"
+    "url": "git+https://github.com/Reynau/the-game.git"
   },
   "keywords": [
     "game",
@@ -19,12 +19,14 @@
   "author": "Xavier Lopez Reynau",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Reynau/eat-the-chocolate/issues"
+    "url": "https://github.com/Reynau/the-game/issues"
   },
-  "homepage": "https://github.com/Reynau/eat-the-chocolate#readme",
+  "homepage": "https://github.com/Reynau/the-game#readme",
   "dependencies": {
     "colors": "^1.1.2",
-    "pixi.js": "^4.4.1"
+    "path": "^0.12.7",
+    "pixi.js": "^4.4.1",
+    "tmx-parser": "^1.5.0"
   },
   "devDependencies": {
     "browserify": "^14.1.0",
