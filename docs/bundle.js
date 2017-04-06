@@ -53428,7 +53428,7 @@ function TileSet (route, tileSet) {
     }
   }
 
-  this.baseTexture = PIXI.Texture.fromImage(route + '/' + tileSet.image.source, false, PIXI.SCALE_MODES.NEAREST)
+  this.baseTexture = PIXI.Texture.fromImage(route + '/the-game/' + tileSet.image.source, false, PIXI.SCALE_MODES.NEAREST)
   this.textures = []
 
   for (var y = this.margin; y < this.image.height; y += this.tileHeight + this.spacing) {
