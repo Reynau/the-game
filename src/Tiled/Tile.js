@@ -1,5 +1,5 @@
 function Tile (tile, tileSet, horizontalFlip, verticalFlip, diagonalFlip) {
-  var textures = []
+  let textures = []
 
   if (tile.animations.length) {
     tile.animations.forEach(function (frame) {
@@ -11,7 +11,7 @@ function Tile (tile, tileSet, horizontalFlip, verticalFlip, diagonalFlip) {
 
   PIXI.extras.AnimatedSprite.call(this, textures)
 
-  for (var property in tile) {
+  for (let property in tile) {
     if (tile.hasOwnProperty(property)) {
       this[property] = tile[property]
     }

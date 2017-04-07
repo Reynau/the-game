@@ -1,4 +1,4 @@
-var TileSet = require('./Tileset'),
+let TileSet = require('./Tileset'),
   TileLayer = require('./TileLayer'),
   ImageLayer = require('./ImageLayer'),
   path = require('path')
@@ -6,10 +6,10 @@ var TileSet = require('./Tileset'),
 function TiledMap (resourceUrl) {
   PIXI.Container.call(this)
 
-  var route = path.dirname(resourceUrl)
-  var data = PIXI.loader.resources[resourceUrl].data
+  let route = path.dirname(resourceUrl)
+  let data = PIXI.loader.resources[resourceUrl].data
 
-  for (var property in data) {
+  for (let property in data) {
     if (data.hasOwnProperty(property)) {
       this[property] = data[property]
     }
@@ -31,12 +31,12 @@ function TiledMap (resourceUrl) {
   data.layers.forEach(function (layerData) {
     switch (layerData.type) {
       case 'tile':
-        var tileLayer = new TileLayer(layerData, this.tileSets)
+        let tileLayer = new TileLayer(layerData, this.tileSets)
         this.layers[layerData.name] = tileLayer
         this.addLayer(tileLayer)
         break
       case 'image':
-        var imageLayer = new ImageLayer(layerData, route)
+        let imageLayer = new ImageLayer(layerData, route)
         this.layers[layerData.name] = imageLayer
         this.addLayer(imageLayer)
         break
