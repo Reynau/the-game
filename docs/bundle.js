@@ -52879,9 +52879,10 @@ const Rectangle = PIXI.Rectangle
 const { Directions, KeyState, Key } = require('./Constants')
 
 module.exports = class Character {
-  constructor (keyboardHandler, texture, x, y) {
+  constructor (keyboardHandler, texture, x, y, map) {
     this.keyboardHandler = keyboardHandler
     this.baseTexture = texture
+    this.map = map
 
     this.animationTextures = {}
     this.animationTextures.goDown = []
@@ -52937,6 +52938,25 @@ module.exports = class Character {
 
   move () {
     let direction = this.getDirection()
+
+    let simPos = {x: this.animation.position.x, y: this.animation.position.y}
+    switch (direction) {
+      case Directions.Up:
+        simPos = this.simulateMove(0, -1)
+        break
+      case Directions.Down:
+        simPos = this.simulateMove(0, 1)
+        break
+      case Directions.Left:
+        simPos = this.simulateMove(-1, 0)
+        break
+      case Directions.Right:
+        simPos = this.simulateMove(1, 0)
+        break
+    }
+    console.log(simPos)
+    if (!this.map.isWalkable(simPos.x, simPos.y)) return
+
     if (this.direction !== direction) {
       switch (direction) {
         case Directions.Up:
@@ -52982,6 +53002,13 @@ module.exports = class Character {
     let y = this.animation.position.y
 
     this.animation.position.set(x + dx, y + dy)
+  }
+
+  simulateMove (dx, dy) {
+    let x = this.animation.position.x
+    let y = this.animation.position.y
+
+    return {x: x + dx, y: y + dy}
   }
 
   getAnimation () {
@@ -53126,9 +53153,10 @@ module.exports = {
 },{"pixi.js":164}],234:[function(require,module,exports){
 
 module.exports = class Game {
-  constructor (character, entities) {
+  constructor (map, character, entities) {
     this.character = character
     this.entities = entities
+    this.map = map
 
     // Temporal lines
     this.entities.hearts.forEach((heart) => heart.playAnimation())
@@ -53213,10 +53241,23 @@ module.exports = class KeyboardHandler {
 }
 
 },{"./Constants":232}],236:[function(require,module,exports){
-var ImageLayer = function (layer, route) {
+
+module.exports = class CollisionLayer {
+  constructor(layer) {
+    this.tiles = layer.tiles
+    this.width = layer.map.width
+    this.height = layer.map.height
+  }
+
+  isWalkable (x, y) {
+    return (this.tiles[x + y * this.width] === 0)
+  }
+}
+},{}],237:[function(require,module,exports){
+let ImageLayer = function (layer, route) {
   PIXI.Container.call(this)
 
-  for (var property in layer) {
+  for (let property in layer) {
     if (layer.hasOwnProperty(property)) {
       this[property] = layer[property]
     }
@@ -53225,7 +53266,7 @@ var ImageLayer = function (layer, route) {
   this.alpha = parseFloat(layer.opacity)
 
   if (layer.image && layer.image.source) {
-    var sprite = new PIXI.Sprite.fromImage(route + '/' + layer.image.source)
+    let sprite = new PIXI.Sprite.fromImage(route + '/' + layer.image.source)
     this.addSprite(sprite)
   }
 }
@@ -53238,9 +53279,9 @@ ImageLayer.prototype.addSprite = function (sprite) {
 
 module.exports = ImageLayer
 
-},{}],237:[function(require,module,exports){
+},{}],238:[function(require,module,exports){
 function Tile (tile, tileSet, horizontalFlip, verticalFlip, diagonalFlip) {
-  var textures = []
+  let textures = []
 
   if (tile.animations.length) {
     tile.animations.forEach(function (frame) {
@@ -53252,7 +53293,7 @@ function Tile (tile, tileSet, horizontalFlip, verticalFlip, diagonalFlip) {
 
   PIXI.extras.AnimatedSprite.call(this, textures)
 
-  for (var property in tile) {
+  for (let property in tile) {
     if (tile.hasOwnProperty(property)) {
       this[property] = tile[property]
     }
@@ -53295,12 +53336,12 @@ Tile.prototype = Object.create(PIXI.extras.AnimatedSprite.prototype)
 
 module.exports = Tile
 
-},{}],238:[function(require,module,exports){
-var Tile = require('./Tile')
+},{}],239:[function(require,module,exports){
+let Tile = require('./Tile')
 
-function findTileset (gid, tilesets) {
-  var tileset
-  for (var i = tilesets.length - 1; i >= 0; i--) {
+function findTileset(gid, tilesets) {
+  let tileset
+  for (let i = tilesets.length - 1; i >= 0; i--) {
     tileset = tilesets[i]
     if (tileset.firstGid <= gid) {
       break
@@ -53309,10 +53350,10 @@ function findTileset (gid, tilesets) {
   return tileset
 }
 
-var TileLayer = function (layer, tileSets) {
+let TileLayer = function (layer, tileSets) {
   PIXI.Container.call(this)
 
-  for (var property in layer) {
+  for (let property in layer) {
     if (layer.hasOwnProperty(property)) {
       this[property] = layer[property]
     }
@@ -53321,35 +53362,33 @@ var TileLayer = function (layer, tileSets) {
   this.alpha = parseFloat(layer.opacity)
   this.tiles = []
 
-  for (var y = 0; y < layer.map.height; y++) {
-    for (var x = 0; x < layer.map.width; x++) {
-      var i = x + (y * layer.map.width)
+  for (let y = 0; y < layer.map.height; y++) {
+    for (let x = 0; x < layer.map.width; x++) {
+      let i = x + (y * layer.map.width)
 
-      if (layer.tiles[i]) {
-        if (layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
-          var tileset = findTileset(layer.tiles[i].gid, tileSets)
-          var tile = new Tile(layer.tiles[i], tileset, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i])
+      if (layer.tiles[i] && layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
+        let tileset = findTileset(layer.tiles[i].gid, tileSets)
+        let tile = new Tile(layer.tiles[i], tileset, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i])
 
-          tile.x = x * layer.map.tileWidth
-          tile.y = y * layer.map.tileHeight + (layer.map.tileHeight - tile.textures[0].height)
+        tile.x = x * layer.map.tileWidth
+        tile.y = y * layer.map.tileHeight + (layer.map.tileHeight - tile.textures[0].height)
 
-          tile._x = x
-          tile._y = y
+        tile._x = x
+        tile._y = y
 
-          if (tileset.tileOffset) {
-            tile.x += tileset.tileOffset.x
-            tile.y += tileset.tileOffset.y
-          }
-
-          if (tile.textures.length > 1) {
-            tile.animationSpeed = 1000 / 60 / tile.animations[0].duration
-            tile.gotoAndPlay(0)
-          }
-
-          this.tiles.push(tile)
-
-          this.addTile(tile)
+        if (tileset.tileOffset) {
+          tile.x += tileset.tileOffset.x
+          tile.y += tileset.tileOffset.y
         }
+
+        if (tile.textures.length > 1) {
+          tile.animationSpeed = 1000 / 60 / tile.animations[0].duration
+          tile.gotoAndPlay(0)
+        }
+
+        this.tiles.push(tile)
+
+        this.addTile(tile)
       }
     }
   }
@@ -53363,19 +53402,22 @@ TileLayer.prototype.addTile = function (tile) {
 
 module.exports = TileLayer
 
-},{"./Tile":237}],239:[function(require,module,exports){
-var TileSet = require('./Tileset'),
+},{"./Tile":238}],240:[function(require,module,exports){
+let TileSet = require('./Tileset'),
   TileLayer = require('./TileLayer'),
   ImageLayer = require('./ImageLayer'),
+  CollisionLayer = require('./CollisionLayer'),
   path = require('path')
 
 function TiledMap (resourceUrl) {
   PIXI.Container.call(this)
 
-  var route = path.dirname(resourceUrl)
-  var data = PIXI.loader.resources[resourceUrl].data
+  let route = path.dirname(resourceUrl)
+  let data = PIXI.loader.resources[resourceUrl].data
 
-  for (var property in data) {
+  console.log(data)
+
+  for (let property in data) {
     if (data.hasOwnProperty(property)) {
       this[property] = data[property]
     }
@@ -53386,7 +53428,7 @@ function TiledMap (resourceUrl) {
 
   this.background = new PIXI.Graphics()
   this.background.beginFill(0x000000, 0)
-  this.background.drawRect(0, 0, this._width * this.tileWidth, this._height * this.tileHeight)
+  this.background.drawRect(0, 0, this.width * this.tileWidth, this.height * this.tileHeight)
   this.background.endFill()
   this.addLayer(this.background)
 
@@ -53395,14 +53437,23 @@ function TiledMap (resourceUrl) {
   }, this)
 
   data.layers.forEach(function (layerData) {
+    console.log(layerData)
     switch (layerData.type) {
       case 'tile':
-        var tileLayer = new TileLayer(layerData, this.tileSets)
-        this.layers[layerData.name] = tileLayer
-        this.addLayer(tileLayer)
+        switch (layerData.name) {
+          case "Collisions":
+            let collisionLayer = new CollisionLayer(layerData)
+            this.layers['CollisionLayer'] = collisionLayer
+            break
+          default:
+            let tileLayer = new TileLayer(layerData, this.tileSets)
+            this.layers[layerData.name] = tileLayer
+            this.addLayer(tileLayer)
+            break
+        }
         break
       case 'image':
-        var imageLayer = new ImageLayer(layerData, route)
+        let imageLayer = new ImageLayer(layerData, route)
         this.layers[layerData.name] = imageLayer
         this.addLayer(imageLayer)
         break
@@ -53420,9 +53471,9 @@ TiledMap.prototype.addLayer = function (layer) {
 
 module.exports = TiledMap
 
-},{"./ImageLayer":236,"./TileLayer":238,"./Tileset":240,"path":33}],240:[function(require,module,exports){
+},{"./CollisionLayer":236,"./ImageLayer":237,"./TileLayer":239,"./Tileset":241,"path":33}],241:[function(require,module,exports){
 function TileSet (route, tileSet) {
-  for (var property in tileSet) {
+  for (let property in tileSet) {
     if (tileSet.hasOwnProperty(property)) {
       this[property] = tileSet[property]
     }
@@ -53431,8 +53482,8 @@ function TileSet (route, tileSet) {
   this.baseTexture = PIXI.Texture.fromImage(route + '/the-game/' + tileSet.image.source, false, PIXI.SCALE_MODES.NEAREST)
   this.textures = []
 
-  for (var y = this.margin; y < this.image.height; y += this.tileHeight + this.spacing) {
-    for (var x = this.margin; x < this.image.width; x += this.tileWidth + this.spacing) {
+  for (let y = this.margin; y < this.image.height; y += this.tileHeight + this.spacing) {
+    for (let x = this.margin; x < this.image.width; x += this.tileWidth + this.spacing) {
       this.textures.push(new PIXI.Texture(this.baseTexture, new PIXI.Rectangle(x, y, this.tileWidth, this.tileHeight)))
     }
   }
@@ -53440,7 +53491,7 @@ function TileSet (route, tileSet) {
 
 module.exports = TileSet
 
-},{}],241:[function(require,module,exports){
+},{}],242:[function(require,module,exports){
 const PIXI = require('pixi.js')
 const path = require('path')
 const tmx = require('tmx-parser')
@@ -53458,6 +53509,8 @@ const loader = PIXI.loader
 // Game constants
 let character = {}
 let entities = {}
+
+let map = {}
 
 let maxHearts = 10
 let maxCoins = 10
@@ -53482,11 +53535,11 @@ loader
     })
   })
   .load(function (loader, resources) {
-    let tileMap = new PIXI.extras.TiledMap('map')
-    app.stage.addChild(tileMap)
+    map = new PIXI.extras.TiledMap('map')
+    app.stage.addChild(map)
 
     let keyboardHandler = new KeyboardHandler()
-    character = new Character(keyboardHandler, resources.character.texture, 32, 32)
+    character = new Character(keyboardHandler, resources.character.texture, 32, 32, map)
     app.stage.addChild(character.getAnimation())
 
     entities.hearts = []
@@ -53509,7 +53562,7 @@ loader
       tmpCoin.visible = false
     }
 
-    let game = new Game(character, entities)
+    let game = new Game(map, character, entities)
 
     app.ticker.add(function () {
       game.update()
@@ -53518,4 +53571,4 @@ loader
     app.start()
   })
 
-},{"./Character":231,"./Entities":233,"./Game":234,"./KeyboardHandler":235,"./Tiled/TiledMap":239,"path":33,"pixi.js":164,"tmx-parser":224}]},{},[241]);
+},{"./Character":231,"./Entities":233,"./Game":234,"./KeyboardHandler":235,"./Tiled/TiledMap":240,"path":33,"pixi.js":164,"tmx-parser":224}]},{},[242]);
