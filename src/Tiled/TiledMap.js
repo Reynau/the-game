@@ -1,6 +1,7 @@
 let TileSet = require('./Tileset'),
   TileLayer = require('./TileLayer'),
   ImageLayer = require('./ImageLayer'),
+  CollisionLayer = require('./CollisionLayer'),
   path = require('path')
 
 function TiledMap (resourceUrl) {
@@ -8,6 +9,8 @@ function TiledMap (resourceUrl) {
 
   let route = path.dirname(resourceUrl)
   let data = PIXI.loader.resources[resourceUrl].data
+
+  console.log(data)
 
   for (let property in data) {
     if (data.hasOwnProperty(property)) {
@@ -20,7 +23,7 @@ function TiledMap (resourceUrl) {
 
   this.background = new PIXI.Graphics()
   this.background.beginFill(0x000000, 0)
-  this.background.drawRect(0, 0, this._width * this.tileWidth, this._height * this.tileHeight)
+  this.background.drawRect(0, 0, this.width * this.tileWidth, this.height * this.tileHeight)
   this.background.endFill()
   this.addLayer(this.background)
 
@@ -29,11 +32,20 @@ function TiledMap (resourceUrl) {
   }, this)
 
   data.layers.forEach(function (layerData) {
+    console.log(layerData)
     switch (layerData.type) {
       case 'tile':
-        let tileLayer = new TileLayer(layerData, this.tileSets)
-        this.layers[layerData.name] = tileLayer
-        this.addLayer(tileLayer)
+        switch (layerData.name) {
+          case "Collisions":
+            let collisionLayer = new CollisionLayer(layerData)
+            this.layers['CollisionLayer'] = collisionLayer
+            break
+          default:
+            let tileLayer = new TileLayer(layerData, this.tileSets)
+            this.layers[layerData.name] = tileLayer
+            this.addLayer(tileLayer)
+            break
+        }
         break
       case 'image':
         let imageLayer = new ImageLayer(layerData, route)

@@ -1,6 +1,6 @@
 let Tile = require('./Tile')
 
-function findTileset (gid, tilesets) {
+function findTileset(gid, tilesets) {
   let tileset
   for (let i = tilesets.length - 1; i >= 0; i--) {
     tileset = tilesets[i]
@@ -27,31 +27,29 @@ let TileLayer = function (layer, tileSets) {
     for (let x = 0; x < layer.map.width; x++) {
       let i = x + (y * layer.map.width)
 
-      if (layer.tiles[i]) {
-        if (layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
-          let tileset = findTileset(layer.tiles[i].gid, tileSets)
-          let tile = new Tile(layer.tiles[i], tileset, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i])
+      if (layer.tiles[i] && layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
+        let tileset = findTileset(layer.tiles[i].gid, tileSets)
+        let tile = new Tile(layer.tiles[i], tileset, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i])
 
-          tile.x = x * layer.map.tileWidth
-          tile.y = y * layer.map.tileHeight + (layer.map.tileHeight - tile.textures[0].height)
+        tile.x = x * layer.map.tileWidth
+        tile.y = y * layer.map.tileHeight + (layer.map.tileHeight - tile.textures[0].height)
 
-          tile._x = x
-          tile._y = y
+        tile._x = x
+        tile._y = y
 
-          if (tileset.tileOffset) {
-            tile.x += tileset.tileOffset.x
-            tile.y += tileset.tileOffset.y
-          }
-
-          if (tile.textures.length > 1) {
-            tile.animationSpeed = 1000 / 60 / tile.animations[0].duration
-            tile.gotoAndPlay(0)
-          }
-
-          this.tiles.push(tile)
-
-          this.addTile(tile)
+        if (tileset.tileOffset) {
+          tile.x += tileset.tileOffset.x
+          tile.y += tileset.tileOffset.y
         }
+
+        if (tile.textures.length > 1) {
+          tile.animationSpeed = 1000 / 60 / tile.animations[0].duration
+          tile.gotoAndPlay(0)
+        }
+
+        this.tiles.push(tile)
+
+        this.addTile(tile)
       }
     }
   }
