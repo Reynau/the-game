@@ -16,6 +16,8 @@ const loader = PIXI.loader
 let character = {}
 let entities = {}
 
+let map = {}
+
 let maxHearts = 10
 let maxCoins = 10
 
@@ -39,8 +41,8 @@ loader
     })
   })
   .load(function (loader, resources) {
-    let tileMap = new PIXI.extras.TiledMap('map')
-    app.stage.addChild(tileMap)
+    map = new PIXI.extras.TiledMap('map')
+    app.stage.addChild(map)
 
     let keyboardHandler = new KeyboardHandler()
     character = new Character(keyboardHandler, resources.character.texture, 32, 32)
