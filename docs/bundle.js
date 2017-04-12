@@ -52914,9 +52914,10 @@ module.exports = class Character {
     this.animation.position.set(x, y)
     this.animation.animationSpeed = 0.1
 
-    this.direction = null
+    this.lastDirection = null
     this.coins = 0
     this.health = 0
+    this.speed = 1
   }
 
   getDirection () {
@@ -52937,78 +52938,75 @@ module.exports = class Character {
   }
 
   move () {
-    let direction = this.getDirection()
+    let newDirection = this.getDirection()
 
-    let simPos = {x: this.animation.position.x, y: this.animation.position.y}
+    if (newDirection === null) {
+      this.animation.gotoAndStop(0)
+      this.lastDirection = null
+      return
+    }
+
+    if (this.lastDirection !== newDirection) {
+      this.changeAnimationDir(newDirection)
+      this.lastDirection = newDirection
+    }
+
+    let newPos = this.getNextPosition(newDirection)
+
+    if (this.map.layers.CollisionLayer.isWalkable(newPos.x, newPos.y)) {
+      this.moveCharacterTo(newPos)
+    }
+    else {
+      console.log('Collision!')
+    }
+  }
+
+  changeAnimationDir (direction) {
     switch (direction) {
       case Directions.Up:
-        simPos = this.simulateMove(0, -1)
+        this.animation.textures = this.animationTextures.goUp
+        this.animation.gotoAndPlay(1)
         break
       case Directions.Down:
-        simPos = this.simulateMove(0, 1)
+        this.animation.textures = this.animationTextures.goDown
+        this.animation.gotoAndPlay(1)
         break
       case Directions.Left:
-        simPos = this.simulateMove(-1, 0)
+        this.animation.textures = this.animationTextures.goLeft
+        this.animation.gotoAndPlay(1)
         break
       case Directions.Right:
-        simPos = this.simulateMove(1, 0)
-        break
-    }
-    console.log(simPos)
-    if (!this.map.isWalkable(simPos.x, simPos.y)) return
-
-    if (this.direction !== direction) {
-      switch (direction) {
-        case Directions.Up:
-          this.animation.textures = this.animationTextures.goUp
-          this.animation.gotoAndPlay(1)
-          break
-        case Directions.Down:
-          this.animation.textures = this.animationTextures.goDown
-          this.animation.gotoAndPlay(1)
-          break
-        case Directions.Left:
-          this.animation.textures = this.animationTextures.goLeft
-          this.animation.gotoAndPlay(1)
-          break
-        case Directions.Right:
-          this.animation.textures = this.animationTextures.goRight
-          this.animation.gotoAndPlay(1)
-          break
-        case null:
-          this.animation.gotoAndStop(0)
-          break
-      }
-      this.direction = direction
-    }
-    switch (direction) {
-      case Directions.Up:
-        this.moveCharacter(0, -1)
-        break
-      case Directions.Down:
-        this.moveCharacter(0, 1)
-        break
-      case Directions.Left:
-        this.moveCharacter(-1, 0)
-        break
-      case Directions.Right:
-        this.moveCharacter(1, 0)
+        this.animation.textures = this.animationTextures.goRight
+        this.animation.gotoAndPlay(1)
         break
     }
   }
 
-  moveCharacter (dx, dy) {
-    let x = this.animation.position.x
-    let y = this.animation.position.y
-
-    this.animation.position.set(x + dx, y + dy)
+  getNextPosition (direction) {
+    let pos = this.getActualPosition()
+    switch (direction) {
+      case Directions.Up:
+        pos.y -= this.speed
+        break
+      case Directions.Down:
+        pos.y += this.speed
+        break
+      case Directions.Left:
+        pos.x -= this.speed
+        break
+      case Directions.Right:
+        pos.x += this.speed
+        break
+    }
+    return pos
   }
 
-  simulateMove (dx, dy) {
-    let x = this.animation.position.x
-    let y = this.animation.position.y
+  moveCharacterTo (pos) {
+    this.animation.position.set(pos.x, pos.y)
+  }
 
-    return {x: x + dx, y: y + dy}
+  getActualPosition () {
+    return { x: this.animation.position.x, y: this.animation.position.y }
   }
 
   getAnimation () {
@@ -53243,14 +53241,27 @@ module.exports = class KeyboardHandler {
 },{"./Constants":232}],236:[function(require,module,exports){
 
 module.exports = class CollisionLayer {
-  constructor(layer) {
-    this.tiles = layer.tiles
+
+  constructor (layer) {
+    this.constructCollisionsMap(layer.tiles)
     this.width = layer.map.width
     this.height = layer.map.height
   }
 
   isWalkable (x, y) {
-    return (this.tiles[x + y * this.width] === 0)
+    let posx = Math.floor(x / 16)
+    let posy = Math.floor(y / 16)
+    return this.collisionsMap[posx + posy * this.width]
+  }
+
+  constructCollisionsMap (tilesMap) {
+    this.collisionsMap = new Array(tilesMap.length)
+
+    for (let i = 0; i < tilesMap.length; ++i) {
+      let tile = tilesMap[i]
+
+      this.collisionsMap[i] = (tile === undefined)
+    }
   }
 }
 },{}],237:[function(require,module,exports){
@@ -53415,8 +53426,6 @@ function TiledMap (resourceUrl) {
   let route = path.dirname(resourceUrl)
   let data = PIXI.loader.resources[resourceUrl].data
 
-  console.log(data)
-
   for (let property in data) {
     if (data.hasOwnProperty(property)) {
       this[property] = data[property]
@@ -53437,7 +53446,6 @@ function TiledMap (resourceUrl) {
   }, this)
 
   data.layers.forEach(function (layerData) {
-    console.log(layerData)
     switch (layerData.type) {
       case 'tile':
         switch (layerData.name) {
@@ -53461,6 +53469,7 @@ function TiledMap (resourceUrl) {
         this.layers[layerData.name] = layerData
     }
   }, this)
+  console.log(this.layers)
 }
 
 TiledMap.prototype = Object.create(PIXI.Container.prototype)
@@ -53539,7 +53548,7 @@ loader
     app.stage.addChild(map)
 
     let keyboardHandler = new KeyboardHandler()
-    character = new Character(keyboardHandler, resources.character.texture, 32, 32, map)
+    character = new Character(keyboardHandler, resources.character.texture, 64, 32, map)
     app.stage.addChild(character.getAnimation())
 
     entities.hearts = []
