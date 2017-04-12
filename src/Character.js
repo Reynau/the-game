@@ -35,7 +35,7 @@ module.exports = class Character {
     this.animationTextures.goLeft.push(generateTextureFromTileMap(texture, new Rectangle(48, 96, 16, 32)))
 
     this.animation = new PIXI.extras.AnimatedSprite(this.animationTextures.goDown)
-    this.animation.anchor.set(0.5)
+    this.animation.anchor.set(0.5, 0.667)
     this.animation.position.set(x, y)
     this.animation.animationSpeed = 0.1
 
@@ -77,6 +77,8 @@ module.exports = class Character {
     }
 
     let newPos = this.getNextPosition(newDirection)
+
+    console.log(newPos)
 
     if (this.map.layers.CollisionLayer.isWalkable(newPos.x, newPos.y)) {
       this.moveCharacterTo(newPos)
