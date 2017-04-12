@@ -4,9 +4,10 @@ const Rectangle = PIXI.Rectangle
 const { Directions, KeyState, Key } = require('./Constants')
 
 module.exports = class Character {
-  constructor (keyboardHandler, texture, x, y) {
+  constructor (keyboardHandler, texture, x, y, map) {
     this.keyboardHandler = keyboardHandler
     this.baseTexture = texture
+    this.map = map
 
     this.animationTextures = {}
     this.animationTextures.goDown = []
@@ -38,9 +39,10 @@ module.exports = class Character {
     this.animation.position.set(x, y)
     this.animation.animationSpeed = 0.1
 
-    this.direction = null
+    this.lastDirection = null
     this.coins = 0
     this.health = 0
+    this.speed = 1
   }
 
   getDirection () {
@@ -61,52 +63,75 @@ module.exports = class Character {
   }
 
   move () {
-    let direction = this.getDirection()
-    if (this.direction !== direction) {
-      switch (direction) {
-        case Directions.Up:
-          this.animation.textures = this.animationTextures.goUp
-          this.animation.gotoAndPlay(1)
-          break
-        case Directions.Down:
-          this.animation.textures = this.animationTextures.goDown
-          this.animation.gotoAndPlay(1)
-          break
-        case Directions.Left:
-          this.animation.textures = this.animationTextures.goLeft
-          this.animation.gotoAndPlay(1)
-          break
-        case Directions.Right:
-          this.animation.textures = this.animationTextures.goRight
-          this.animation.gotoAndPlay(1)
-          break
-        case null:
-          this.animation.gotoAndStop(0)
-          break
-      }
-      this.direction = direction
+    let newDirection = this.getDirection()
+
+    if (newDirection === null) {
+      this.animation.gotoAndStop(0)
+      this.lastDirection = null
+      return
     }
+
+    if (this.lastDirection !== newDirection) {
+      this.changeAnimationDir(newDirection)
+      this.lastDirection = newDirection
+    }
+
+    let newPos = this.getNextPosition(newDirection)
+
+    if (this.map.layers.CollisionLayer.isWalkable(newPos.x, newPos.y)) {
+      this.moveCharacterTo(newPos)
+    }
+    else {
+      console.log('Collision!')
+    }
+  }
+
+  changeAnimationDir (direction) {
     switch (direction) {
       case Directions.Up:
-        this.moveCharacter(0, -1)
+        this.animation.textures = this.animationTextures.goUp
+        this.animation.gotoAndPlay(1)
         break
       case Directions.Down:
-        this.moveCharacter(0, 1)
+        this.animation.textures = this.animationTextures.goDown
+        this.animation.gotoAndPlay(1)
         break
       case Directions.Left:
-        this.moveCharacter(-1, 0)
+        this.animation.textures = this.animationTextures.goLeft
+        this.animation.gotoAndPlay(1)
         break
       case Directions.Right:
-        this.moveCharacter(1, 0)
+        this.animation.textures = this.animationTextures.goRight
+        this.animation.gotoAndPlay(1)
         break
     }
   }
 
-  moveCharacter (dx, dy) {
-    let x = this.animation.position.x
-    let y = this.animation.position.y
+  getNextPosition (direction) {
+    let pos = this.getActualPosition()
+    switch (direction) {
+      case Directions.Up:
+        pos.y -= this.speed
+        break
+      case Directions.Down:
+        pos.y += this.speed
+        break
+      case Directions.Left:
+        pos.x -= this.speed
+        break
+      case Directions.Right:
+        pos.x += this.speed
+        break
+    }
+    return pos
+  }
 
-    this.animation.position.set(x + dx, y + dy)
+  moveCharacterTo (pos) {
+    this.animation.position.set(pos.x, pos.y)
+  }
+
+  getActualPosition () {
+    return { x: this.animation.position.x, y: this.animation.position.y }
   }
 
   getAnimation () {

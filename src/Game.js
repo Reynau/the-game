@@ -1,8 +1,9 @@
 
 module.exports = class Game {
-  constructor (character, entities) {
+  constructor (map, character, entities) {
     this.character = character
     this.entities = entities
+    this.map = map
 
     // Temporal lines
     this.entities.hearts.forEach((heart) => heart.playAnimation())

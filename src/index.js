@@ -45,7 +45,7 @@ loader
     app.stage.addChild(map)
 
     let keyboardHandler = new KeyboardHandler()
-    character = new Character(keyboardHandler, resources.character.texture, 32, 32)
+    character = new Character(keyboardHandler, resources.character.texture, 64, 32, map)
     app.stage.addChild(character.getAnimation())
 
     entities.hearts = []
@@ -68,7 +68,7 @@ loader
       tmpCoin.visible = false
     }
 
-    let game = new Game(character, entities)
+    let game = new Game(map, character, entities)
 
     app.ticker.add(function () {
       game.update()

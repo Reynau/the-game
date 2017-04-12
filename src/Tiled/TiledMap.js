@@ -10,8 +10,6 @@ function TiledMap (resourceUrl) {
   let route = path.dirname(resourceUrl)
   let data = PIXI.loader.resources[resourceUrl].data
 
-  console.log(data)
-
   for (let property in data) {
     if (data.hasOwnProperty(property)) {
       this[property] = data[property]
@@ -32,7 +30,6 @@ function TiledMap (resourceUrl) {
   }, this)
 
   data.layers.forEach(function (layerData) {
-    console.log(layerData)
     switch (layerData.type) {
       case 'tile':
         switch (layerData.name) {
@@ -56,6 +53,7 @@ function TiledMap (resourceUrl) {
         this.layers[layerData.name] = layerData
     }
   }, this)
+  console.log(this.layers)
 }
 
 TiledMap.prototype = Object.create(PIXI.Container.prototype)
