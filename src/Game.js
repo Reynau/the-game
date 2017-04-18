@@ -11,9 +11,16 @@ module.exports = class Game {
   }
 
   update () {
-    // let action = this.getAction(keyState)
     this.character.move()
     this.checkCollisions()
+  }
+
+  updateCamera (stage, renderer) {
+    let position = this.character.getActualPosition()
+    stage.pivot.x = position.x;
+    stage.pivot.y = position.y;
+    stage.position.x = renderer.width/2;
+    stage.position.y = renderer.height/2;
   }
 
   checkCollisions () {

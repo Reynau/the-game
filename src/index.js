@@ -72,6 +72,7 @@ loader
 
     app.ticker.add(function () {
       game.update()
+      game.updateCamera(app.stage, app.renderer)
     })
 
     app.start()

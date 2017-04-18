@@ -78,13 +78,8 @@ module.exports = class Character {
 
     let newPos = this.getNextPosition(newDirection)
 
-    console.log(newPos)
-
     if (this.map.layers.CollisionLayer.isWalkable(newPos.x, newPos.y)) {
       this.moveCharacterTo(newPos)
-    }
-    else {
-      console.log('Collision!')
     }
   }
 
