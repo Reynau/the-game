@@ -53,13 +53,22 @@ function TiledMap (resourceUrl) {
         this.layers[layerData.name] = layerData
     }
   }, this)
-  console.log(this.layers)
 }
 
 TiledMap.prototype = Object.create(PIXI.Container.prototype)
 
 TiledMap.prototype.addLayer = function (layer) {
   this.addChild(layer)
+}
+
+TiledMap.prototype.getRandWalkablePos = function () {
+  let rndX = Math.random() * 800
+  let rndY = Math.random() * 600
+  while (!this.layers.CollisionLayer.isWalkable(rndX, rndY)) {
+    let rndX = Math.random() * 800
+    let rndY = Math.random() * 600
+  }
+  return { x: rndX, y: rndY }
 }
 
 module.exports = TiledMap

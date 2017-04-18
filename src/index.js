@@ -30,9 +30,8 @@ loader
   .add('map', 'maps/testmap.tmx')
   .add('assets/gfx/Overworld.png')
   .use((resource, next) => {
-    if (!(resource.name === 'map')) {
-      return next()
-    }
+    if (!(resource.name === 'map')) return next()
+
     let route = path.dirname(resource.url.replace(this.baseUrl, ''))
     tmx.parse(resource.xhr.responseText, route, function (err, map) {
       if (err) throw err
@@ -44,8 +43,7 @@ loader
     map = new PIXI.extras.TiledMap('map')
     app.stage.addChild(map)
 
-    let keyboardHandler = new KeyboardHandler()
-    character = new Character(keyboardHandler, resources.character.texture, 64, 32, map)
+    character = new Character(new KeyboardHandler(), resources.character.texture, 64, 32, map)
     app.stage.addChild(character.getAnimation())
 
     entities.hearts = []
