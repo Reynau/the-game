@@ -53496,13 +53496,22 @@ function TiledMap (resourceUrl) {
         this.layers[layerData.name] = layerData
     }
   }, this)
-  console.log(this.layers)
 }
 
 TiledMap.prototype = Object.create(PIXI.Container.prototype)
 
 TiledMap.prototype.addLayer = function (layer) {
   this.addChild(layer)
+}
+
+TiledMap.prototype.getRandWalkablePos = function () {
+  let rndX = Math.random() * 800
+  let rndY = Math.random() * 600
+  while (!this.layers.CollisionLayer.isWalkable(rndX, rndY)) {
+    let rndX = Math.random() * 800
+    let rndY = Math.random() * 600
+  }
+  return { x: rndX, y: rndY }
 }
 
 module.exports = TiledMap
@@ -53560,9 +53569,8 @@ loader
   .add('map', 'maps/testmap.tmx')
   .add('assets/gfx/Overworld.png')
   .use((resource, next) => {
-    if (!(resource.name === 'map')) {
-      return next()
-    }
+    if (!(resource.name === 'map')) return next()
+
     let route = path.dirname(resource.url.replace(this.baseUrl, ''))
     tmx.parse(resource.xhr.responseText, route, function (err, map) {
       if (err) throw err
@@ -53574,8 +53582,7 @@ loader
     map = new PIXI.extras.TiledMap('map')
     app.stage.addChild(map)
 
-    let keyboardHandler = new KeyboardHandler()
-    character = new Character(keyboardHandler, resources.character.texture, 64, 32, map)
+    character = new Character(new KeyboardHandler(), resources.character.texture, 64, 32, map)
     app.stage.addChild(character.getAnimation())
 
     entities.hearts = []
@@ -53607,5 +53614,4 @@ loader
 
     app.start()
   })
-
 },{"./Character":231,"./Entities":233,"./Game":234,"./KeyboardHandler":235,"./Tiled/TiledMap":240,"path":33,"pixi.js":164,"tmx-parser":224}]},{},[242]);
