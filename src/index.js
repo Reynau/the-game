@@ -8,6 +8,8 @@ const Entities = require('./Entities')
 const Game = require('./Game')
 const KeyboardHandler = require('./KeyboardHandler')
 
+const spriteSheetParser = require('./SpriteSheetParser')
+
 // PIXI constants
 const app = new PIXI.Application()
 const loader = PIXI.loader
@@ -27,20 +29,12 @@ app.stop()
 loader
   .add('character', 'assets/gfx/character.png')
   .add('objects', 'assets/gfx/objects.png')
-  .add('map', 'maps/testmap.tmx')
+  .add('TestMap', 'maps/testmap.tmx')
   .add('assets/gfx/Overworld.png')
-  .use((resource, next) => {
-    if (!(resource.name === 'map')) return next()
 
-    let route = path.dirname(resource.url.replace(this.baseUrl, ''))
-    tmx.parse(resource.xhr.responseText, route, function (err, map) {
-      if (err) throw err
-      resource.data = map
-      next()
-    })
-  })
+  .use(spriteSheetParser)
   .load(function (loader, resources) {
-    map = new PIXI.extras.TiledMap('map')
+    map = new PIXI.extras.TiledMap('TestMap')
     app.stage.addChild(map)
 
     character = new Character(new KeyboardHandler(), resources.character.texture, 64, 32, map)
