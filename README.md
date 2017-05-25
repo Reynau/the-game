@@ -1,5 +1,5 @@
 # The-game
-HTML5 RPG Game still in development, using [Pixi.js v4](http://www.pixijs.com/) as graphics library. More info soon!
+HTML5 RPG Game still in development, using [Pixi.js v4](http://www.pixijs.com/) as graphics library, and [Tiled to Pixi](https://github.com/Reynau/tiled-to-pixi) library to parse Tiled map to Pixi containers!. More info soon!
 
 ![alt tag](http://lopezreynau.space/the-game/img/cover.png)
 
