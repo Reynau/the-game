@@ -1,14 +1,12 @@
 const PIXI = require('pixi.js')
 const path = require('path')
 const tmx = require('tmx-parser')
-PIXI.extras.TiledMap = require('./Tiled/TiledMap')
+const TiledMap = require('tiled-to-pixi')
 
 const Character = require('./Character')
 const Entities = require('./Entities')
 const Game = require('./Game')
 const KeyboardHandler = require('./KeyboardHandler')
-
-const spriteSheetParser = require('./SpriteSheetParser')
 
 // PIXI constants
 const app = new PIXI.Application()
@@ -32,9 +30,10 @@ loader
   .add('TestMap', 'maps/testmap.tmx')
   .add('assets/gfx/Overworld.png')
 
-  .use(spriteSheetParser)
+  .use(TiledMap.middleware)
+
   .load(function (loader, resources) {
-    map = new PIXI.extras.TiledMap('TestMap')
+    map = new TiledMap('TestMap')
     app.stage.addChild(map)
 
     character = new Character(new KeyboardHandler(), resources.character.texture, 64, 32, map)
