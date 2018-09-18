@@ -58609,6 +58609,8 @@ const KeyboardHandler = require('./KeyboardHandler')
 const app = new PIXI.Application()
 const loader = PIXI.loader
 
+let game
+
 // Game constants
 let character = {}
 let entities = {}
@@ -58617,6 +58619,10 @@ let map = {}
 
 let maxHearts = 10
 let maxCoins = 10
+
+let delta = 0
+let timestep = 1000 / 60
+let lastFrame = Date.now()
 
 document.body.appendChild(app.view)
 
@@ -58656,13 +58662,24 @@ loader
       tmpCoin.visible = false
     }
 
-    let game = new Game(map, character, entities)
-
-    app.ticker.add(function () {
-      game.update()
-      game.updateCamera(app.stage, app.renderer)
-    })
+    game = new Game(map, character, entities)
 
     app.start()
+    setInterval(loop, timestep)
   })
+
+function updateDelta () {
+  let timestamp = Date.now()
+  delta = timestamp - lastFrame
+  lastFrame = timestamp
+}
+
+function loop () {
+  updateDelta()
+  while (delta >= timestep) {
+    game.update()
+    game.updateCamera(app.stage, app.renderer)
+    delta -= timestep
+  }
+}
 },{"./Character":248,"./Entities":250,"./Game":251,"./KeyboardHandler":252,"path":35,"pixi.js":169,"tiled-to-pixi":240,"tmx-parser":242}]},{},[253]);
