@@ -2499,7 +2499,7 @@ util.inherits(DeflateRaw, Zlib);
 util.inherits(InflateRaw, Zlib);
 util.inherits(Unzip, Zlib);
 }).call(this,require('_process'))
-},{"./binding":8,"_process":205,"assert":1,"buffer":11,"stream":233,"util":247}],10:[function(require,module,exports){
+},{"./binding":8,"_process":205,"assert":1,"buffer":11,"stream":233,"util":246}],10:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}],11:[function(require,module,exports){
 /*!
@@ -35216,7 +35216,7 @@ function determineCrossOrigin(url) {
     return '';
 }
 
-},{"url":243}],139:[function(require,module,exports){
+},{"url":242}],139:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44381,7 +44381,7 @@ function getResourcePath(resource, baseUrl) {
     return _url2.default.resolve(resource.url.replace(baseUrl, ''), resource.data.meta.image);
 }
 
-},{"../core":79,"resource-loader":229,"url":243}],180:[function(require,module,exports){
+},{"../core":79,"resource-loader":229,"url":242}],180:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -51402,7 +51402,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"./_stream_duplex":211,"./internal/streams/destroy":217,"./internal/streams/stream":218,"_process":205,"core-util-is":12,"inherits":17,"process-nextick-args":204,"safe-buffer":231,"timers":241,"util-deprecate":245}],216:[function(require,module,exports){
+},{"./_stream_duplex":211,"./internal/streams/destroy":217,"./internal/streams/stream":218,"_process":205,"core-util-is":12,"inherits":17,"process-nextick-args":204,"safe-buffer":231,"timers":240,"util-deprecate":244}],216:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -56148,6 +56148,381 @@ function simpleEnd(buf) {
   return buf && buf.length ? this.write(buf) : '';
 }
 },{"safe-buffer":231}],235:[function(require,module,exports){
+module.exports = class CollisionLayer {
+
+  constructor(layer) {
+    this.constructCollisionsMap(layer.tiles)
+    this.width = layer.map.width
+    this.height = layer.map.height
+  }
+
+  isWalkable(x, y) {
+    let posx = Math.floor(x / 16)
+    let posy = Math.floor(y / 16)
+
+    let resx = x % 16
+    let resy = y % 16
+
+    let actual = this.collisionsMap[posx + posy * this.width]
+
+    let right = this.collisionsMap[posx + posy * this.width + 1]
+    let left = this.collisionsMap[posx + posy * this.width - 1]
+    let up = this.collisionsMap[posx + posy * this.width - this.width]
+    let down = this.collisionsMap[posx + posy * this.width + this.width]
+
+    let downRight = this.collisionsMap[posx + posy * this.width + this.width + 1]
+    let downLeft = this.collisionsMap[posx + posy * this.width + this.width - 1]
+    let upRight = this.collisionsMap[posx + posy * this.width - this.width + 1]
+    let upLeft = this.collisionsMap[posx + posy * this.width - this.width - 1]
+
+    let pwl = 6
+    let pwr = 8
+    let phu = 8
+    let phd = 2
+
+    return !(!actual || resx < pwl && !left || resx > pwr && !right || resy > phu && !down || resy < phd && !up ||
+    resy > phu && resx > pwr && !downRight || resy > phu && resx < pwl && !downLeft ||
+    resy < phd && resx > pwr && !upRight || resy < phd && resx < pwl && !upLeft)
+  }
+
+  constructCollisionsMap(tilesMap) {
+    this.collisionsMap = new Array(tilesMap.length)
+
+    for (let i = 0; i < tilesMap.length; ++i) {
+      let tile = tilesMap[i]
+
+      this.collisionsMap[i] = (tile === undefined)
+    }
+  }
+}
+},{}],236:[function(require,module,exports){
+function setTextures (tile, tileSet) {
+  let textures = []
+  if (tile.animations.length) {
+    tile.animations.forEach(function (frame) {
+      textures.push(tileSet.textures[frame.tileId])
+    }, this)
+  } else {
+    textures.push(tileSet.textures[tile.gid - tileSet.firstGid])
+  }
+  return textures
+}
+
+class Tile extends PIXI.extras.AnimatedSprite {
+  constructor (tile, tileSet, horizontalFlip, verticalFlip, diagonalFlip) {
+    let textures = setTextures(tile, tileSet)
+    super(textures)
+
+    this.textures = textures
+    this.tileSet = tileSet
+    this.setTileProperties(tile)
+    this.setFlips(horizontalFlip, verticalFlip, diagonalFlip)
+  }
+
+  setTileProperties (tile) {
+    for (let property in tile) {
+      if (tile.hasOwnProperty(property)) {
+        this[property] = tile[property]
+      }
+    }
+  }
+
+  setFlips (horizontalFlip, verticalFlip, diagonalFlip) {
+    if (horizontalFlip) {
+      this.anchor.x = 1
+      this.scale.x = -1
+    }
+
+    if (verticalFlip) {
+      this.anchor.y = 1
+      this.scale.y = -1
+    }
+
+    if (diagonalFlip) {
+      if (horizontalFlip) {
+        this.anchor.x = 0
+        this.scale.x = 1
+        this.anchor.y = 1
+        this.scale.y = 1
+
+        this.rotation = PIXI.DEG_TO_RAD * 90
+      }
+      if (verticalFlip) {
+        this.anchor.x = 1
+        this.scale.x = 1
+        this.anchor.y = 0
+        this.scale.y = 1
+
+        this.rotation = PIXI.DEG_TO_RAD * -90
+      }
+    }
+  }
+}
+
+module.exports = Tile
+},{}],237:[function(require,module,exports){
+const Tile = require('./Tile')
+
+class TileLayer extends PIXI.Container {
+  constructor (layer, tileSets) {
+    super()
+
+    this.setLayerProperties(layer)
+    this.alpha = parseFloat(layer.opacity)
+    this.setLayerTiles(layer, tileSets)
+  }
+
+  setLayerProperties (layer) {
+    for (let property in layer) {
+      if (layer.hasOwnProperty(property)) {
+        this[property] = layer[property]
+      }
+    }
+  }
+
+  setLayerTiles (layer, tileSets) {
+    this.tiles = []
+    for (let y = 0; y < layer.map.height; y++) {
+      for (let x = 0; x < layer.map.width; x++) {
+        let i = x + (y * layer.map.width)
+
+        if (layer.tiles[i] && layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
+          let tileSet = findTileSet(layer.tiles[i].gid, tileSets)
+          let tile = new Tile(layer.tiles[i], tileSet, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i])
+
+          tile.x = x * layer.map.tileWidth
+          tile.y = y * layer.map.tileHeight + (layer.map.tileHeight - tile.textures[0].height)
+
+          tile._x = x
+          tile._y = y
+
+          if (tileSet.tileOffset) {
+            tile.x += tileSet.tileOffset.x
+            tile.y += tileSet.tileOffset.y
+          }
+
+          if (tile.textures.length > 1) {
+            tile.animationSpeed = 1000 / 60 / tile.animations[0].duration
+            tile.gotoAndPlay(0)
+          }
+
+          this.tiles.push(tile)
+
+          this.addTile(tile)
+        }
+      }
+    }
+  }
+
+  addTile (tile) {
+    this.addChild(tile)
+  }
+}
+
+function findTileSet(gid, tileSets) {
+  let tileSet
+  for (let i = tileSets.length - 1; i >= 0; i--) {
+    tileSet = tileSets[i]
+    if (tileSet.firstGid <= gid) {
+      break
+    }
+  }
+  return tileSet
+}
+
+module.exports = TileLayer
+},{"./Tile":236}],238:[function(require,module,exports){
+class TileSet {
+  constructor(route, tileSet) {
+    this.setTileSetProperties(tileSet)
+    this.baseTexture = PIXI.Texture.fromImage(route + '/' + tileSet.image.source, false, PIXI.SCALE_MODES.NEAREST)
+    this.setTileTextures()
+  }
+
+  setTileSetProperties(tileSet) {
+    for (let property in tileSet) {
+      if (tileSet.hasOwnProperty(property)) {
+        this[property] = tileSet[property]
+      }
+    }
+  }
+
+  setTileTextures() {
+    this.textures = []
+    for (let y = this.margin; y < this.image.height; y += this.tileHeight + this.spacing) {
+      for (let x = this.margin; x < this.image.width; x += this.tileWidth + this.spacing) {
+        this.textures.push(new PIXI.Texture(this.baseTexture, new PIXI.Rectangle(x, y, this.tileWidth, this.tileHeight)))
+      }
+    }
+  }
+}
+
+module.exports = TileSet
+},{}],239:[function(require,module,exports){
+const path = require('path')
+const tmx = require('tmx-parser')
+
+const TileSet = require('./TileSet')
+const TileLayer = require('./TileLayer')
+const CollisionLayer = require('./CollisionLayer')
+
+class TiledMap extends PIXI.Container {
+  constructor (resourceId) {
+    super()
+
+    let resource = PIXI.loader.resources[resourceId]
+    let route = path.dirname(resource.url)
+
+    this.setDataProperties(resource.data)
+
+    this.backgroundLayer = this.createBackgroundLayer()
+    this.addLayer(this.backgroundLayer)
+
+    this.setDataTileSets(resource.data, route)
+    this.setDataLayers(resource.data)
+  }
+
+  setDataProperties (data) {
+    for (let property in data) {
+      if (data.hasOwnProperty(property)) {
+        this[property] = data[property]
+      }
+    }
+  }
+
+  createBackgroundLayer () {
+    let background = new PIXI.Graphics()
+    background.beginFill(0x000000, 0)
+    background.drawRect(0, 0, this.width * this.tileWidth, this.height * this.tileHeight)
+    background.endFill()
+    return background
+  }
+
+  setDataTileSets (data, route) {
+    this.tileSets = []
+    data.tileSets.forEach(function (tileSetData) {
+      this.tileSets.push(new TileSet(route, tileSetData))
+    }, this)
+  }
+
+  setDataLayers (data) {
+    data.layers.forEach(function (layerData) {
+      switch (layerData.type) {
+        case 'tile':
+          switch (layerData.name) {
+            case "Collisions":
+              this.layers['CollisionLayer'] = new CollisionLayer(layerData)
+              break
+            default:
+              let tileLayer = new TileLayer(layerData, this.tileSets)
+              this.layers[layerData.name] = tileLayer
+              this.addLayer(tileLayer)
+              break
+          }
+          break
+        default:
+          this.layers[layerData.name] = layerData
+      }
+    }, this)
+  }
+
+  addLayer (layer) {
+    this.addChild(layer)
+  }
+
+  static middleware (resource, next) {
+    if (!(resource.extension === 'tmx')) return next()
+
+    let route = path.dirname(resource.url.replace(this.baseUrl, ''))
+    tmx.parse(resource.xhr.responseText, route, function (err, map) {
+      if (err) throw err
+      resource.data = map
+      next()
+    })
+  }
+}
+
+module.exports = TiledMap
+},{"./CollisionLayer":235,"./TileLayer":237,"./TileSet":238,"path":35,"tmx-parser":241}],240:[function(require,module,exports){
+(function (setImmediate,clearImmediate){
+var nextTick = require('process/browser.js').nextTick;
+var apply = Function.prototype.apply;
+var slice = Array.prototype.slice;
+var immediateIds = {};
+var nextImmediateId = 0;
+
+// DOM APIs, for completeness
+
+exports.setTimeout = function() {
+  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
+};
+exports.setInterval = function() {
+  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
+};
+exports.clearTimeout =
+exports.clearInterval = function(timeout) { timeout.close(); };
+
+function Timeout(id, clearFn) {
+  this._id = id;
+  this._clearFn = clearFn;
+}
+Timeout.prototype.unref = Timeout.prototype.ref = function() {};
+Timeout.prototype.close = function() {
+  this._clearFn.call(window, this._id);
+};
+
+// Does not start the time, just sets up the members needed.
+exports.enroll = function(item, msecs) {
+  clearTimeout(item._idleTimeoutId);
+  item._idleTimeout = msecs;
+};
+
+exports.unenroll = function(item) {
+  clearTimeout(item._idleTimeoutId);
+  item._idleTimeout = -1;
+};
+
+exports._unrefActive = exports.active = function(item) {
+  clearTimeout(item._idleTimeoutId);
+
+  var msecs = item._idleTimeout;
+  if (msecs >= 0) {
+    item._idleTimeoutId = setTimeout(function onTimeout() {
+      if (item._onTimeout)
+        item._onTimeout();
+    }, msecs);
+  }
+};
+
+// That's not how node.js implements it but the exposed api is the same.
+exports.setImmediate = typeof setImmediate === "function" ? setImmediate : function(fn) {
+  var id = nextImmediateId++;
+  var args = arguments.length < 2 ? false : slice.call(arguments, 1);
+
+  immediateIds[id] = true;
+
+  nextTick(function onNextTick() {
+    if (immediateIds[id]) {
+      // fn.call() is faster so we optimize for the common use-case
+      // @see http://jsperf.com/call-apply-segu
+      if (args) {
+        fn.apply(null, args);
+      } else {
+        fn.call(null);
+      }
+      // Prevent ids from leaking
+      exports.clearImmediate(id);
+    }
+  });
+
+  return id;
+};
+
+exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
+  delete immediateIds[id];
+};
+}).call(this,require("timers").setImmediate,require("timers").clearImmediate)
+},{"process/browser.js":205,"timers":240}],241:[function(require,module,exports){
 (function (Buffer){
 var sax = require('sax');
 var fs = require('fs');
@@ -57020,384 +57395,7 @@ function Terrain() {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":11,"fs":10,"path":35,"pend":36,"sax":232,"zlib":9}],236:[function(require,module,exports){
-module.exports = class CollisionLayer {
-
-  constructor(layer) {
-    this.constructCollisionsMap(layer.tiles)
-    this.width = layer.map.width
-    this.height = layer.map.height
-  }
-
-  isWalkable(x, y) {
-    let posx = Math.floor(x / 16)
-    let posy = Math.floor(y / 16)
-
-    let resx = x % 16
-    let resy = y % 16
-
-    let actual = this.collisionsMap[posx + posy * this.width]
-
-    let right = this.collisionsMap[posx + posy * this.width + 1]
-    let left = this.collisionsMap[posx + posy * this.width - 1]
-    let up = this.collisionsMap[posx + posy * this.width - this.width]
-    let down = this.collisionsMap[posx + posy * this.width + this.width]
-
-    let downRight = this.collisionsMap[posx + posy * this.width + this.width + 1]
-    let downLeft = this.collisionsMap[posx + posy * this.width + this.width - 1]
-    let upRight = this.collisionsMap[posx + posy * this.width - this.width + 1]
-    let upLeft = this.collisionsMap[posx + posy * this.width - this.width - 1]
-
-    let pwl = 6
-    let pwr = 8
-    let phu = 8
-    let phd = 2
-
-    return !(!actual || resx < pwl && !left || resx > pwr && !right || resy > phu && !down || resy < phd && !up ||
-    resy > phu && resx > pwr && !downRight || resy > phu && resx < pwl && !downLeft ||
-    resy < phd && resx > pwr && !upRight || resy < phd && resx < pwl && !upLeft)
-  }
-
-  constructCollisionsMap(tilesMap) {
-    this.collisionsMap = new Array(tilesMap.length)
-
-    for (let i = 0; i < tilesMap.length; ++i) {
-      let tile = tilesMap[i]
-
-      this.collisionsMap[i] = (tile === undefined)
-    }
-  }
-}
-},{}],237:[function(require,module,exports){
-function setTextures (tile, tileSet) {
-  let textures = []
-  if (tile.animations.length) {
-    tile.animations.forEach(function (frame) {
-      textures.push(tileSet.textures[frame.tileId])
-    }, this)
-  } else {
-    textures.push(tileSet.textures[tile.gid - tileSet.firstGid])
-  }
-  return textures
-}
-
-class Tile extends PIXI.extras.AnimatedSprite {
-  constructor (tile, tileSet, horizontalFlip, verticalFlip, diagonalFlip) {
-    let textures = setTextures(tile, tileSet)
-    super(textures)
-
-    this.textures = textures
-    this.tileSet = tileSet
-    this.setTileProperties(tile)
-    this.setFlips(horizontalFlip, verticalFlip, diagonalFlip)
-  }
-
-  setTileProperties (tile) {
-    for (let property in tile) {
-      if (tile.hasOwnProperty(property)) {
-        this[property] = tile[property]
-      }
-    }
-  }
-
-  setFlips (horizontalFlip, verticalFlip, diagonalFlip) {
-    if (horizontalFlip) {
-      this.anchor.x = 1
-      this.scale.x = -1
-    }
-
-    if (verticalFlip) {
-      this.anchor.y = 1
-      this.scale.y = -1
-    }
-
-    if (diagonalFlip) {
-      if (horizontalFlip) {
-        this.anchor.x = 0
-        this.scale.x = 1
-        this.anchor.y = 1
-        this.scale.y = 1
-
-        this.rotation = PIXI.DEG_TO_RAD * 90
-      }
-      if (verticalFlip) {
-        this.anchor.x = 1
-        this.scale.x = 1
-        this.anchor.y = 0
-        this.scale.y = 1
-
-        this.rotation = PIXI.DEG_TO_RAD * -90
-      }
-    }
-  }
-}
-
-module.exports = Tile
-},{}],238:[function(require,module,exports){
-const Tile = require('./Tile')
-
-class TileLayer extends PIXI.Container {
-  constructor (layer, tileSets) {
-    super()
-
-    this.setLayerProperties(layer)
-    this.alpha = parseFloat(layer.opacity)
-    this.setLayerTiles(layer, tileSets)
-  }
-
-  setLayerProperties (layer) {
-    for (let property in layer) {
-      if (layer.hasOwnProperty(property)) {
-        this[property] = layer[property]
-      }
-    }
-  }
-
-  setLayerTiles (layer, tileSets) {
-    this.tiles = []
-    for (let y = 0; y < layer.map.height; y++) {
-      for (let x = 0; x < layer.map.width; x++) {
-        let i = x + (y * layer.map.width)
-
-        if (layer.tiles[i] && layer.tiles[i].gid && layer.tiles[i].gid !== 0) {
-          let tileSet = findTileSet(layer.tiles[i].gid, tileSets)
-          let tile = new Tile(layer.tiles[i], tileSet, layer.horizontalFlips[i], layer.verticalFlips[i], layer.diagonalFlips[i])
-
-          tile.x = x * layer.map.tileWidth
-          tile.y = y * layer.map.tileHeight + (layer.map.tileHeight - tile.textures[0].height)
-
-          tile._x = x
-          tile._y = y
-
-          if (tileSet.tileOffset) {
-            tile.x += tileSet.tileOffset.x
-            tile.y += tileSet.tileOffset.y
-          }
-
-          if (tile.textures.length > 1) {
-            tile.animationSpeed = 1000 / 60 / tile.animations[0].duration
-            tile.gotoAndPlay(0)
-          }
-
-          this.tiles.push(tile)
-
-          this.addTile(tile)
-        }
-      }
-    }
-  }
-
-  addTile (tile) {
-    this.addChild(tile)
-  }
-}
-
-function findTileSet(gid, tileSets) {
-  let tileSet
-  for (let i = tileSets.length - 1; i >= 0; i--) {
-    tileSet = tileSets[i]
-    if (tileSet.firstGid <= gid) {
-      break
-    }
-  }
-  return tileSet
-}
-
-module.exports = TileLayer
-},{"./Tile":237}],239:[function(require,module,exports){
-class TileSet {
-  constructor(route, tileSet) {
-    this.setTileSetProperties(tileSet)
-    this.baseTexture = PIXI.Texture.fromImage(route + '/' + tileSet.image.source, false, PIXI.SCALE_MODES.NEAREST)
-    this.setTileTextures()
-  }
-
-  setTileSetProperties(tileSet) {
-    for (let property in tileSet) {
-      if (tileSet.hasOwnProperty(property)) {
-        this[property] = tileSet[property]
-      }
-    }
-  }
-
-  setTileTextures() {
-    this.textures = []
-    for (let y = this.margin; y < this.image.height; y += this.tileHeight + this.spacing) {
-      for (let x = this.margin; x < this.image.width; x += this.tileWidth + this.spacing) {
-        this.textures.push(new PIXI.Texture(this.baseTexture, new PIXI.Rectangle(x, y, this.tileWidth, this.tileHeight)))
-      }
-    }
-  }
-}
-
-module.exports = TileSet
-},{}],240:[function(require,module,exports){
-const path = require('path')
-const tmx = require('tmx-parser')
-
-const TileSet = require('./TileSet')
-const TileLayer = require('./TileLayer')
-const CollisionLayer = require('./CollisionLayer')
-
-class TiledMap extends PIXI.Container {
-  constructor (resourceId) {
-    super()
-
-    let resource = PIXI.loader.resources[resourceId]
-    let route = path.dirname(resource.url)
-
-    this.setDataProperties(resource.data)
-
-    this.backgroundLayer = this.createBackgroundLayer()
-    this.addLayer(this.backgroundLayer)
-
-    this.setDataTileSets(resource.data, route)
-    this.setDataLayers(resource.data)
-  }
-
-  setDataProperties (data) {
-    for (let property in data) {
-      if (data.hasOwnProperty(property)) {
-        this[property] = data[property]
-      }
-    }
-  }
-
-  createBackgroundLayer () {
-    let background = new PIXI.Graphics()
-    background.beginFill(0x000000, 0)
-    background.drawRect(0, 0, this.width * this.tileWidth, this.height * this.tileHeight)
-    background.endFill()
-    return background
-  }
-
-  setDataTileSets (data, route) {
-    this.tileSets = []
-    data.tileSets.forEach(function (tileSetData) {
-      this.tileSets.push(new TileSet(route, tileSetData))
-    }, this)
-  }
-
-  setDataLayers (data) {
-    data.layers.forEach(function (layerData) {
-      switch (layerData.type) {
-        case 'tile':
-          switch (layerData.name) {
-            case "Collisions":
-              this.layers['CollisionLayer'] = new CollisionLayer(layerData)
-              break
-            default:
-              let tileLayer = new TileLayer(layerData, this.tileSets)
-              this.layers[layerData.name] = tileLayer
-              this.addLayer(tileLayer)
-              break
-          }
-          break
-        default:
-          this.layers[layerData.name] = layerData
-      }
-    }, this)
-  }
-
-  addLayer (layer) {
-    this.addChild(layer)
-  }
-
-  static middleware (resource, next) {
-    if (!(resource.extension === 'tmx')) return next()
-
-    let route = path.dirname(resource.url.replace(this.baseUrl, ''))
-    tmx.parse(resource.xhr.responseText, route, function (err, map) {
-      if (err) throw err
-      resource.data = map
-      next()
-    })
-  }
-}
-
-module.exports = TiledMap
-},{"./CollisionLayer":236,"./TileLayer":238,"./TileSet":239,"path":35,"tmx-parser":235}],241:[function(require,module,exports){
-(function (setImmediate,clearImmediate){
-var nextTick = require('process/browser.js').nextTick;
-var apply = Function.prototype.apply;
-var slice = Array.prototype.slice;
-var immediateIds = {};
-var nextImmediateId = 0;
-
-// DOM APIs, for completeness
-
-exports.setTimeout = function() {
-  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
-};
-exports.setInterval = function() {
-  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
-};
-exports.clearTimeout =
-exports.clearInterval = function(timeout) { timeout.close(); };
-
-function Timeout(id, clearFn) {
-  this._id = id;
-  this._clearFn = clearFn;
-}
-Timeout.prototype.unref = Timeout.prototype.ref = function() {};
-Timeout.prototype.close = function() {
-  this._clearFn.call(window, this._id);
-};
-
-// Does not start the time, just sets up the members needed.
-exports.enroll = function(item, msecs) {
-  clearTimeout(item._idleTimeoutId);
-  item._idleTimeout = msecs;
-};
-
-exports.unenroll = function(item) {
-  clearTimeout(item._idleTimeoutId);
-  item._idleTimeout = -1;
-};
-
-exports._unrefActive = exports.active = function(item) {
-  clearTimeout(item._idleTimeoutId);
-
-  var msecs = item._idleTimeout;
-  if (msecs >= 0) {
-    item._idleTimeoutId = setTimeout(function onTimeout() {
-      if (item._onTimeout)
-        item._onTimeout();
-    }, msecs);
-  }
-};
-
-// That's not how node.js implements it but the exposed api is the same.
-exports.setImmediate = typeof setImmediate === "function" ? setImmediate : function(fn) {
-  var id = nextImmediateId++;
-  var args = arguments.length < 2 ? false : slice.call(arguments, 1);
-
-  immediateIds[id] = true;
-
-  nextTick(function onNextTick() {
-    if (immediateIds[id]) {
-      // fn.call() is faster so we optimize for the common use-case
-      // @see http://jsperf.com/call-apply-segu
-      if (args) {
-        fn.apply(null, args);
-      } else {
-        fn.call(null);
-      }
-      // Prevent ids from leaking
-      exports.clearImmediate(id);
-    }
-  });
-
-  return id;
-};
-
-exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
-  delete immediateIds[id];
-};
-}).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":205,"timers":241}],242:[function(require,module,exports){
-arguments[4][235][0].apply(exports,arguments)
-},{"buffer":11,"dup":235,"fs":10,"path":35,"pend":36,"sax":232,"zlib":9}],243:[function(require,module,exports){
+},{"buffer":11,"fs":10,"path":35,"pend":36,"sax":232,"zlib":9}],242:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -58131,7 +58129,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":244,"punycode":206,"querystring":209}],244:[function(require,module,exports){
+},{"./util":243,"punycode":206,"querystring":209}],243:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -58149,7 +58147,7 @@ module.exports = {
   }
 };
 
-},{}],245:[function(require,module,exports){
+},{}],244:[function(require,module,exports){
 (function (global){
 
 /**
@@ -58220,11 +58218,11 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],246:[function(require,module,exports){
+},{}],245:[function(require,module,exports){
 arguments[4][3][0].apply(exports,arguments)
-},{"dup":3}],247:[function(require,module,exports){
+},{"dup":3}],246:[function(require,module,exports){
 arguments[4][4][0].apply(exports,arguments)
-},{"./support/isBuffer":246,"_process":205,"dup":4,"inherits":17}],248:[function(require,module,exports){
+},{"./support/isBuffer":245,"_process":205,"dup":4,"inherits":17}],247:[function(require,module,exports){
 const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
@@ -58386,7 +58384,7 @@ function generateTextureFromTileMap (tileMap, rectangle) {
   })
 }
 
-},{"./Constants":249,"pixi.js":169}],249:[function(require,module,exports){
+},{"./Constants":248,"pixi.js":169}],248:[function(require,module,exports){
 const Directions = {
   Down: 0,
   Right: 1,
@@ -58420,7 +58418,7 @@ module.exports = {
   KeyState
 }
 
-},{}],250:[function(require,module,exports){
+},{}],249:[function(require,module,exports){
 const PIXI = require('pixi.js')
 const Rectangle = PIXI.Rectangle
 
@@ -58497,7 +58495,7 @@ module.exports = {
   Coin
 }
 
-},{"pixi.js":169}],251:[function(require,module,exports){
+},{"pixi.js":169}],250:[function(require,module,exports){
 
 module.exports = class Game {
   constructor (map, character, entities) {
@@ -58553,7 +58551,7 @@ module.exports = class Game {
   }
 }
 
-},{}],252:[function(require,module,exports){
+},{}],251:[function(require,module,exports){
 
 const { KeyState, Key } = require('./Constants')
 
@@ -58594,7 +58592,7 @@ module.exports = class KeyboardHandler {
   }
 }
 
-},{"./Constants":249}],253:[function(require,module,exports){
+},{"./Constants":248}],252:[function(require,module,exports){
 const PIXI = require('pixi.js')
 const path = require('path')
 const tmx = require('tmx-parser')
@@ -58682,4 +58680,4 @@ function loop () {
     delta -= timestep
   }
 }
-},{"./Character":248,"./Entities":250,"./Game":251,"./KeyboardHandler":252,"path":35,"pixi.js":169,"tiled-to-pixi":240,"tmx-parser":242}]},{},[253]);
+},{"./Character":247,"./Entities":249,"./Game":250,"./KeyboardHandler":251,"path":35,"pixi.js":169,"tiled-to-pixi":239,"tmx-parser":241}]},{},[252]);
