@@ -6,8 +6,7 @@ HTML5 RPG Game still in development, using [Pixi.js v4](http://www.pixijs.com/) 
 Basic stuff to implement:
 - [ ] Find a name for the game
 - [X] Implement basic animations and player movement
-- [x] Implement a simple map parser with collisions -- [Credits to Pixi-Tiled](https://github.com/beeglebug/pixi-tiled)
-- [ ] Implement a more complex map parser -- [Visit the repo!](https://github.com/Reynau/tiled-to-pixi)
+- [x] Implement a simple map parser with collisions -- [Tiled to Pixi](https://github.com/Reynau/tiled-to-pixi)
 - [ ] Implement basic interactions system
 - [ ] Implement fighting system
 - [ ] Implement simple IA for NPCs and enemies
